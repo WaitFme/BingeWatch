@@ -1,0 +1,29 @@
+<resources>
+    <string name="app_name">煲剧助手</string>
+    <string name="unknown">未知</string>
+
+    <!--main screen-->
+    <string name="search_tip">搜索</string>
+
+    <!--screen manager-->
+    <string name="main_screen">首屏</string>
+    <string name="splash_screen">闪屏</string>
+    <string name="settings_screen">设置</string>
+
+    <!--pager manager-->
+    <string name="watching_pager">追剧中</string>
+    <string name="want_pager">想观看</string>
+    <string name="watched_pager">已完结</string>
+
+    <!--bottom sheet pager-->
+    <string name="tv_name">剧名</string>
+    <string name="current_episode">当前集数</string>
+    <string name="all_episode">总集数</string>
+    <string name="tv_name_tip">该名称已存在</string>
+    <string name="current_episode_tip">请输入数字</string>
+    <string name="all_episode_tip">请输入数字且不为零</string>
+    <string name="input_error">请填上所有输入框</string>
+    <string name="input_state">连续添加</string>
+    <string name="cancel">取消</string>
+    <string name="apply">提交</string>
+</resources>
