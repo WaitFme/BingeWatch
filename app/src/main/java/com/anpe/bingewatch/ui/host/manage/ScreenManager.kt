@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.ui.host.manager
+package com.anpe.bingewatch.ui.host.manage
 
 import androidx.annotation.StringRes
 import com.anpe.bingewatch.R

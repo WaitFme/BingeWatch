@@ -2,12 +2,9 @@ package com.anpe.bingewatch.ui.host.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anpe.bingewatch.data.local.entity.WatchEntity
-import com.anpe.bingewatch.data.local.entity.WatchNewEntity
-import com.anpe.bingewatch.data.local.repository.WatchRepository
-import com.anpe.bingewatch.intent.event.MainEvent
-import com.anpe.bingewatch.intent.state.SortType
-import com.anpe.bingewatch.intent.state.ViewState
+import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.data.repository.WatchRepository
+import com.anpe.bingewatch.utils.SortType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +20,7 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
         Context.MODE_PRIVATE
     )*/
 
-    val channel = Channel<MainEvent>(Channel.UNLIMITED)
+    val channel = Channel<MainIntent>(Channel.UNLIMITED)
 
     private val _watchFlow = MutableStateFlow<List<WatchNewEntity>>(listOf())
     val watchFlow: StateFlow<List<WatchNewEntity>> get() = _watchFlow
@@ -42,30 +39,26 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
     val sortType: StateFlow<SortType> get() = _sortType
 
     init {
-        getAll()
-//        getIndex(0)
+        getAllData()
         channelHandler(channel)
     }
 
-    private fun channelHandler(channel: Channel<MainEvent>) {
+    private fun channelHandler(channel: Channel<MainIntent>) {
         viewModelScope.launch {
             channel.consumeAsFlow().collect {
                 when (it) {
-                    is MainEvent.GetIndex -> getIndex(it.type)
+                    MainIntent.DeleteAllData -> repository.deleteAllWatch()
+                    is MainIntent.DeleteData -> repository.deleteWatch(it.entity)
+                    MainIntent.GetData -> getAllData()
+                    is MainIntent.InsertData -> repository.insertWatch(it.entity)
+                    is MainIntent.UpdateData -> repository.updateWatch(it.entity)
+                    is MainIntent.FindTitleAlive -> findWatchAlive(it.title)
                 }
             }
         }
     }
 
-    fun insertWatch(vararg entity: WatchNewEntity) = repository.insertWatch(*entity)
-
-    fun updateWatch(vararg entity: WatchNewEntity) = repository.updateWatch(*entity)
-
-    fun deleteWatch(vararg entity: WatchNewEntity) = repository.deleteWatch(*entity)
-
-    fun deleteAllWatch() = repository.deleteAllWatch()
-
-    fun findWatch(pattenState: Int) {
+    private fun findWatch(pattenState: Int) {
         viewModelScope.launch {
             repository.findWatch(pattenState).collect {
                 _watchFlow.emit(when (sortType.value) {
@@ -77,7 +70,7 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
         }
     }
 
-    private fun getAll() {
+    private fun getAllData() {
         viewModelScope.launch {
             repository.getAllWatch().collect {
                 _watchFlow.emit(it.sortedBy { it.changeTime })
@@ -97,7 +90,7 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
         }
     }
 
-    fun findWatch(pattenState: Int, pattenString: String) {
+    private fun findWatch(pattenState: Int, pattenString: String) {
         viewModelScope.launch {
             repository.findWatchFlow(pattenState, pattenString).collect {
                 _watchFlow.emit(it)
@@ -105,7 +98,7 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
         }
     }
 
-    fun findWatchAlive(title: String) {
+    private fun findWatchAlive(title: String) {
         viewModelScope.launch {
             repository.findWatchTitleIsAlive(title).collect {
                 _watchTitleIsAlive.emit(it.isNotEmpty())
@@ -113,7 +106,7 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
         }
     }
 
-    fun sortType(sortType: SortType) {
+    private fun sortType(sortType: SortType) {
         viewModelScope.launch {
             _sortType.emit(sortType)
             val buff = watchFlow

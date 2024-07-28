@@ -1,7 +1,7 @@
 package com.anpe.bingewatch.di
 
-import com.anpe.bingewatch.data.local.repository.WatchRepository
-import com.anpe.bingewatch.data.local.repository.WatchRepositoryImpl
+import com.anpe.bingewatch.data.repository.WatchRepository
+import com.anpe.bingewatch.data.repository.RepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,5 +15,5 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
     @Binds
     @Singleton
-    abstract fun bindNetRepository(watchRepositoryImpl: WatchRepositoryImpl): WatchRepository
+    abstract fun bindNetRepository(repositoryImpl: RepositoryImpl): WatchRepository
 }

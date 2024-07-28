@@ -3,12 +3,14 @@ package com.anpe.bingewatch.ui.host.screen.main
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -52,11 +54,9 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.anpe.bingewatch.R
-import com.anpe.bingewatch.data.local.entity.WatchEntity
-import com.anpe.bingewatch.data.local.entity.WatchNewEntity
-import com.anpe.bingewatch.intent.event.MainEvent
-import com.anpe.bingewatch.ui.host.manager.ScreenManager
-import com.anpe.bingewatch.ui.host.pager.WatchingPager
+import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.ui.host.manage.ScreenManager
+import com.anpe.bingewatch.ui.widget.WatchItem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,7 +66,7 @@ fun MainScreen(navControllerScreen: NavHostController) {
 
     val scope = rememberCoroutineScope()
 
-    val dataList by viewModel.watchFlow.collectAsState()
+    val entities by viewModel.watchFlow.collectAsState()
 
     var openBottomSheet by rememberSaveable { mutableStateOf(false) }
 
@@ -78,7 +78,6 @@ fun MainScreen(navControllerScreen: NavHostController) {
                 swi = {
                     scope.launch {
                         tabIndex = it
-//                        viewModel.channel.send(MainEvent.GetIndex(it))
                     }
                 },
                 navi = {
@@ -103,18 +102,33 @@ fun MainScreen(navControllerScreen: NavHostController) {
             }
         },
     ) { pv->
-        Box(modifier = Modifier.padding(pv)) {
-            WatchingPager(
-                modifier = Modifier.fillMaxSize(),
-                tabIndex = tabIndex,
-                dataList = dataList,
-                onUpdate = {
-                    viewModel.updateWatch(it)
-                },
-                onDelete = {
-                    viewModel.deleteWatch(it)
+        LazyVerticalGrid(
+            modifier = Modifier
+                .padding(top = pv.calculateTopPadding())
+                .fillMaxSize(),
+            columns = GridCells.Adaptive(minSize = 250.dp),
+            contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 100.dp)
+        ) {
+            items(count = entities.size, key = { entities[it].id }) {
+                if (tabIndex == entities[it].watchState) {
+                    WatchItem(
+                        modifier = Modifier
+                            .animateItem()
+                            .padding(5.dp),
+                        entity = entities[it],
+                        onUpdate = {
+                            scope.launch {
+                                viewModel.channel.send(MainIntent.UpdateData(it))
+                            }
+                        },
+                        onDelete = {
+                            scope.launch {
+                                viewModel.channel.send(MainIntent.DeleteData(it))
+                            }
+                        }
+                    )
                 }
-            )
+            }
         }
     }
 
@@ -162,7 +176,9 @@ fun MainScreen(navControllerScreen: NavHostController) {
                     onValueChange = {
                         title = it
 
-                        viewModel.findWatchAlive(title = title.text)
+                        scope.launch {
+                            viewModel.channel.send(MainIntent.FindTitleAlive(title.text))
+                        }
                     }
                 )
 
@@ -251,7 +267,9 @@ fun MainScreen(navControllerScreen: NavHostController) {
                                     isDelete = false
                                 )
 
-                                viewModel.insertWatch(entity)
+                                scope.launch {
+                                    viewModel.channel.send(MainIntent.InsertData(entity))
+                                }
 
                                 if (checkState.value) {
                                     title = TextFieldValue("")
@@ -338,7 +356,9 @@ fun MainScreen(navControllerScreen: NavHostController) {
                                     isDelete = false
                                 )
 
-                                viewModel.insertWatch(entity)
+                                scope.launch {
+                                    viewModel.channel.send(MainIntent.InsertData(entity))
+                                }
 
                                 if (checkState.value) {
                                     title = TextFieldValue("")

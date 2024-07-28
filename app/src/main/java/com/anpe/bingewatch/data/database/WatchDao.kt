@@ -1,7 +1,7 @@
-package com.anpe.bingewatch.data.local.database
+package com.anpe.bingewatch.data.database
 
 import androidx.room.*
-import com.anpe.bingewatch.data.local.entity.WatchNewEntity
+import com.anpe.bingewatch.data.entity.WatchNewEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

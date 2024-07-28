@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.ui.host.screen
+package com.anpe.bingewatch.ui.host.screen.splash
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -16,12 +16,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.anpe.bingewatch.ui.main.MainViewModel
-import com.anpe.bingewatch.ui.host.manager.ScreenManager
+import com.anpe.bingewatch.ui.host.manage.ScreenManager
 import kotlinx.coroutines.delay
 
 @Composable
-fun AnimatedSplashScreen(navControllerScreen: NavController, viewModel: MainViewModel) {
+fun AnimatedSplashScreen(navControllerScreen: NavController) {
     var startAnimation by remember {
         mutableStateOf(false)
     }

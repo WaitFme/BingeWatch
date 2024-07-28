@@ -1,34 +1,22 @@
-package com.anpe.bingewatch.ui.host.pager
+package com.anpe.bingewatch.ui.widget
 
 import android.content.Context
 import android.os.Build
-import android.os.CombinedVibration
 import android.os.Vibrator
-import android.os.VibratorManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandIn
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
 import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -43,7 +31,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,49 +47,17 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anpe.bingewatch.R
-import com.anpe.bingewatch.data.local.entity.WatchEntity
-import com.anpe.bingewatch.data.local.entity.WatchNewEntity
-import com.anpe.bingewatch.ui.widget.CustomProgress
-import com.anpe.bingewatch.ui.widget.MyDialog
+import com.anpe.bingewatch.data.entity.WatchNewEntity
 import com.anpe.bingewatch.utils.Tools.Companion.getTime
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 @Composable
-fun WatchingPager(
-    modifier: Modifier = Modifier,
-    tabIndex: Int,
-    dataList: List<WatchNewEntity>,
-    onUpdate: (WatchNewEntity) -> Unit,
-    onDelete: (WatchNewEntity) -> Unit
-) {
-    LazyVerticalGrid(
-        modifier = modifier.fillMaxSize(),
-        columns = GridCells.Adaptive(minSize = 250.dp),
-        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 100.dp)
-    ) {
-        items(count = dataList.size, key = { dataList[it].id }) {
-            if (tabIndex == dataList[it].watchState) {
-                CardItem(
-                    modifier = Modifier
-                        .animateItem()
-                        .padding(5.dp),
-                    entity = dataList[it],
-                    onUpdate = onUpdate,
-                    onDelete = onDelete
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CardItem(
+fun WatchItem(
     modifier: Modifier = Modifier,
     entity: WatchNewEntity,
     onUpdate: (WatchNewEntity) -> Unit,

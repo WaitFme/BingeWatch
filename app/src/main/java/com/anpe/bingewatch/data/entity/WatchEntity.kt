@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.data.local.entity
+package com.anpe.bingewatch.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

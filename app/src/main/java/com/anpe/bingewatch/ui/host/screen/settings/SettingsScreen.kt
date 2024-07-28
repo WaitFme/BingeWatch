@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.ui.host.screen
+package com.anpe.bingewatch.ui.host.screen.settings
 
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,9 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.anpe.bingewatch.ui.host.screen.main.MainViewModel
-import com.anpe.bingewatch.intent.state.SortType
+import com.anpe.bingewatch.utils.SortType
 import com.anpe.bingewatch.ui.widget.SettingItem
-import com.anpe.bingewatch.ui.widget.SettingItemSwitch
 import com.anpe.bingewatch.ui.widget.Test
 import kotlinx.coroutines.launch
 
@@ -107,15 +106,15 @@ fun SettingsScreen(navController: NavHostController) {
                             onClick = {
                                 when (it) {
                                     0 -> {
-                                        viewModel.sortType(SortType.TITLE)
+//                                        viewModel.sortType(SortType.TITLE)
                                     }
 
                                     1 -> {
-                                        viewModel.sortType(SortType.CREATE_TIME)
+//                                        viewModel.sortType(SortType.CREATE_TIME)
                                     }
 
                                     else -> {
-                                        viewModel.sortType(SortType.CHANGE_TIME)
+//                                        viewModel.sortType(SortType.CHANGE_TIME)
                                     }
                                 }
                             }
@@ -136,7 +135,7 @@ fun SettingsScreen(navController: NavHostController) {
                         },
                         confirmButton = {
                             Button(onClick = {
-                                viewModel.deleteAllWatch()
+//                                viewModel.deleteAllWatch()
                                 Toast.makeText(
                                     context,
                                     "delete success",

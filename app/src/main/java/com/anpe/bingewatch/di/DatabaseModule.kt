@@ -1,7 +1,7 @@
 package com.anpe.bingewatch.di
 
 import android.content.Context
-import com.anpe.bingewatch.data.local.database.WatchDatabase
+import com.anpe.bingewatch.data.database.WatchDatabase
 import dagger.Binds
 import dagger.Module
 import dagger.Provides

@@ -84,12 +84,12 @@ dependencies {
     implementation(libs.accompanist.systemuicontroller)
 
     // Moshi
-    implementation(libs.moshi.kotlin)
-    ksp(libs.moshi.kotlin.codegen)
+//    implementation(libs.moshi.kotlin)
+//    ksp(libs.moshi.kotlin.codegen)
 
     // Retrofit2
-    implementation(libs.retrofit)
-    implementation(libs.converter.moshi)
+//    implementation(libs.retrofit)
+//    implementation(libs.converter.moshi)
 
     // Jetpack room
     implementation(libs.room.runtime)

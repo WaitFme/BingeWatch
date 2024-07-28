@@ -1,14 +1,13 @@
-package com.anpe.bingewatch.data.local.repository
+package com.anpe.bingewatch.data.repository
 
-import com.anpe.bingewatch.data.local.entity.WatchEntity
-import com.anpe.bingewatch.data.local.database.WatchDao
-import com.anpe.bingewatch.data.local.entity.WatchNewEntity
+import com.anpe.bingewatch.data.database.WatchDao
+import com.anpe.bingewatch.data.entity.WatchNewEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class WatchRepositoryImpl @Inject constructor(private val dao: WatchDao): WatchRepository {
+class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchRepository {
     override fun insertWatch(vararg entity: WatchNewEntity) {
         CoroutineScope(Dispatchers.IO).launch {
             dao.insertWatch(*entity)

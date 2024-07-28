@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.intent.state
+package com.anpe.bingewatch.utils
 
 enum class SortType {
     TITLE,
