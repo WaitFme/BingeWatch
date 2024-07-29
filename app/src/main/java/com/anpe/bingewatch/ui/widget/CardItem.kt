@@ -8,6 +8,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.draggable
@@ -17,18 +19,24 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DisplayMode
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -38,10 +46,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,7 +61,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.anpe.bingewatch.R
-import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.data.entity.WatchEntity
+import com.anpe.bingewatch.utils.Tools.Companion.change
 import com.anpe.bingewatch.utils.Tools.Companion.getTime
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -59,9 +71,11 @@ import kotlin.math.roundToInt
 @Composable
 fun WatchItem(
     modifier: Modifier = Modifier,
-    entity: WatchNewEntity,
-    onUpdate: (WatchNewEntity) -> Unit,
-    onDelete: (WatchNewEntity) -> Unit,
+    entity: WatchEntity,
+    onEpiIncrease: () -> Unit = {},
+    onEpiDecrease: () -> Unit = {},
+    onDateChange: () -> Unit = {},
+    onDialog: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -77,15 +91,13 @@ fun WatchItem(
     }
     val offsetYAnimate by animateFloatAsState(targetValue = offsetX, label = "")
     var width by remember { mutableFloatStateOf(0f) }
-    var widthlimit by remember { mutableFloatStateOf(0f) }
+    var widthLimit by remember { mutableFloatStateOf(0f) }
 
-    var showDialog by remember {
-        mutableStateOf(false)
-    }
+    val trigger = width * 0.25
 
-    val showIcon = if (offsetX > width * 0.30) {
+    val showIcon = if (offsetX > trigger) {
         1
-    } else if (offsetX < -(width * 0.30)) {
+    } else if (offsetX < -trigger) {
         2
     } else {
         0
@@ -100,20 +112,18 @@ fun WatchItem(
                 .pointerInput(Unit) {
                     detectTapGestures(
                         onLongPress = {
-                            showDialog = !showDialog
-
                             scope.launch {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                                     vibrator.vibrate(50)
                                 }
                             }
+                            onDialog()
                         }
                     )
                 }
                 .onGloballyPositioned {
                     width = it.size.width.toFloat()
-//                    widthlimit = width * 2 / 3
-                    widthlimit = width
+                    widthLimit = width
                 }
                 .offset {
                     IntOffset(offsetYAnimate.roundToInt(), 0)
@@ -124,8 +134,8 @@ fun WatchItem(
                             xDrag += it
 
                             xDisplay = xDrag
-                                .coerceAtMost(widthlimit)
-                                .coerceAtLeast(-widthlimit)
+                                .coerceAtMost(widthLimit)
+                                .coerceAtLeast(-widthLimit)
 
                             offsetX = if (xDisplay < 0) {
                                 xDisplay * (1 - offsetX / (-width))
@@ -135,40 +145,13 @@ fun WatchItem(
                         }
                     ),
                     orientation = Orientation.Horizontal,
-                    onDragStarted = {
-
-                    },
                     onDragStopped = {
-                        if (offsetX.absoluteValue > width / 3) {
-                            val time = System.currentTimeMillis()
-
-                            val currentEpisode =
-                                if (offsetX > 0 && entity.currentEpisode < entity.totalEpisode) {
-                                    entity.currentEpisode + 1
-                                } else if (offsetX < 0 && entity.currentEpisode > 0) {
-                                    entity.currentEpisode - 1
-                                } else {
-                                    entity.currentEpisode
-                                }
-
-                            val watchingState: Int = when (currentEpisode) {
-                                0 -> 1
-                                entity.totalEpisode -> 2
-                                else -> 0
+                        if (offsetX.absoluteValue > trigger) {
+                            if (offsetX > 0) {
+                                onEpiIncrease()
+                            } else {
+                                onEpiDecrease()
                             }
-
-                            val watchEntity = WatchNewEntity(
-                                title = entity.title,
-                                currentEpisode = currentEpisode,
-                                totalEpisode = entity.totalEpisode,
-                                watchState = watchingState,
-                                createTime = entity.createTime,
-                                changeTime = time,
-                                isDelete = entity.isDelete,
-                                remarks = entity.remarks
-                            )
-
-                            onUpdate(watchEntity)
                         }
 
                         offsetX = 0f
@@ -204,6 +187,14 @@ fun WatchItem(
 
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
+                        modifier = Modifier
+                            .pointerInput(Unit) {
+                                detectTapGestures(
+                                    onLongPress = {
+                                        onDateChange()
+                                    }
+                                )
+                            },
                         text = entity.createTime.getTime(),
                         fontSize = 14.sp
                     )
@@ -227,8 +218,9 @@ fun WatchItem(
             exit = fadeOut()
         ) {
             Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = ""
+                painter = painterResource(id = R.drawable.baseline_exposure_plus_1_24),
+                tint = MaterialTheme.colorScheme.primary,
+                contentDescription = "plus"
             )
         }
         AnimatedVisibility(
@@ -240,139 +232,10 @@ fun WatchItem(
             exit = fadeOut()
         ) {
             Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = ""
+                painter = painterResource(id = R.drawable.baseline_exposure_neg_1_24),
+                tint = MaterialTheme.colorScheme.primary,
+                contentDescription = "neg"
             )
         }
-    }
-
-    if (showDialog) {
-        var currentEpisode by remember {
-            mutableStateOf(TextFieldValue(text = entity.currentEpisode.toString()))
-        }
-        var allEpisode by remember {
-            mutableStateOf(TextFieldValue(text = entity.totalEpisode.toString()))
-        }
-
-        val isError = remember {
-            mutableStateListOf(false, false)
-        }
-
-        val label = remember {
-            mutableStateListOf(
-                context.resources.getString(if (isError[0]) R.string.current_episode_tip else R.string.current_episode),
-                context.resources.getString(if (isError[1]) R.string.all_episode_tip else R.string.all_episode)
-            )
-        }
-
-        MyDialog(
-            title = entity.title,
-            onDismissRequest = { showDialog = false },
-            content = {
-                OutlinedTextField(
-                    value = currentEpisode,
-                    isError = isError[0],
-                    label = { Text(text = label[0]) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
-                    ),
-                    onValueChange = {
-                        currentEpisode = it
-                        isError[0] = try {
-                            currentEpisode.text.toInt()
-                            false
-                        } catch (e: NumberFormatException) {
-                            currentEpisode.text.isNotEmpty()
-                        }
-                    }
-                )
-
-                OutlinedTextField(
-                    value = allEpisode,
-                    isError = isError[1],
-                    label = { Text(text = label[1]) },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    onValueChange = {
-                        allEpisode = it
-                        isError[1] = try {
-                            (allEpisode.text.toInt() == 0)
-                        } catch (e: NumberFormatException) {
-                            allEpisode.text.isNotEmpty()
-                        }
-                    }
-                )
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDialog = false
-                    }
-                ) {
-                    Text("取消")
-                }
-            },
-            deleteButton = {
-                TextButton(
-                    onClick = {
-                        onDelete(entity)
-                        showDialog = false
-                    }
-                ) {
-                    Text(text = "删除", color = Color.Red)
-                }
-            },
-            updateButton = {
-                TextButton(
-                    onClick = {
-                        if (currentEpisode.text.isNotEmpty() && allEpisode.text.isNotEmpty()) {
-                            if (isError[0] || isError[1]) {
-                                Toast.makeText(
-                                    context,
-                                    "plz handle the error",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@TextButton
-                            }
-
-                            val watchingState = if (currentEpisode.text.toInt() == 0) {
-                                1
-                            } else if (currentEpisode.text.toInt() == allEpisode.text.toInt()) {
-                                2
-                            } else {
-                                0
-                            }
-
-                            onUpdate(
-                                WatchNewEntity(
-                                    title = entity.title,
-                                    currentEpisode = currentEpisode.text.toInt(),
-                                    totalEpisode = allEpisode.text.toInt(),
-                                    watchState = watchingState,
-                                    createTime = entity.createTime,
-                                    changeTime = System.currentTimeMillis(),
-                                    remarks = entity.remarks,
-                                    isDelete = entity.isDelete
-                                )
-                            )
-
-                            showDialog = false
-                        } else {
-                            Toast.makeText(
-                                context,
-                                context.resources.getString(R.string.input_error),
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@TextButton
-                        }
-                    }
-                ) {
-                    Text(text = "更新")
-                }
-            }
-        )
     }
 }

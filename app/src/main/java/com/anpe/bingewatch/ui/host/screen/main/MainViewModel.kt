@@ -2,44 +2,37 @@ package com.anpe.bingewatch.ui.host.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.data.entity.WatchEntity
 import com.anpe.bingewatch.data.repository.WatchRepository
 import com.anpe.bingewatch.utils.SortType
+import com.anpe.bingewatch.utils.Tools.Companion.change
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel @Inject constructor(private val repository: WatchRepository): ViewModel() {
-    /*private val sp = application.getSharedPreferences(
-        "${application.packageName}_settings",
-        Context.MODE_PRIVATE
-    )*/
-
+class MainViewModel @Inject constructor(private val repository: WatchRepository) : ViewModel() {
     val channel = Channel<MainIntent>(Channel.UNLIMITED)
 
-    private val _watchFlow = MutableStateFlow<List<WatchNewEntity>>(listOf())
-    val watchFlow: StateFlow<List<WatchNewEntity>> get() = _watchFlow
+    private val _watchFlow = MutableStateFlow<List<WatchEntity>>(listOf())
+    val watchFlow: StateFlow<List<WatchEntity>> get() = _watchFlow
 
     private val _watchTitleIsAlive = MutableStateFlow(false)
     val watchTitleIsAlive: StateFlow<Boolean> get() = _watchTitleIsAlive
 
-    /*private val _sortType = MutableStateFlow(sp.getInt("SORT_TYPE", -1).let {
-        when (it) {
-            0 -> SortType.TITLE
-            1 -> SortType.CREATE_TIME
-            else -> SortType.CHANGE_TIME
-        }
-    })*/
+    private val _currentWatchFlow = MutableStateFlow<WatchEntity?>(null)
+    val currentWatchFlow = _currentWatchFlow.asStateFlow()
+
     private val _sortType = MutableStateFlow(SortType.CHANGE_TIME)
     val sortType: StateFlow<SortType> get() = _sortType
 
     init {
-        getAllData()
+        getAllWatch()
         channelHandler(channel)
     }
 
@@ -48,52 +41,149 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
             channel.consumeAsFlow().collect {
                 when (it) {
                     MainIntent.DeleteAllData -> repository.deleteAllWatch()
-                    is MainIntent.DeleteData -> repository.deleteWatch(it.entity)
-                    MainIntent.GetData -> getAllData()
+                    is MainIntent.DeleteData -> deleteWatch(it.entity)
+                    MainIntent.GetData -> getAllWatch()
                     is MainIntent.InsertData -> repository.insertWatch(it.entity)
                     is MainIntent.UpdateData -> repository.updateWatch(it.entity)
                     is MainIntent.FindTitleAlive -> findWatchAlive(it.title)
+                    is MainIntent.EpiDecrease -> epiChange(it.id, -1)
+                    is MainIntent.EpiIncrease -> epiChange(it.id, 1)
+                    is MainIntent.CreateWatch -> createWatch(
+                        it.title,
+                        it.remarks,
+                        it.currentEpi,
+                        it.totalEpi
+                    )
+
+                    is MainIntent.UpdateWatch -> updateWatch(
+                        it.id,
+                        it.watchState,
+                        it.currentEpi,
+                        it.totalEpi
+                    )
+
+                    is MainIntent.DeleteWatch -> deleteWatch(it.id)
+                    is MainIntent.UpdateCurrentWatch -> updateCurrentWatch(it.id)
                 }
             }
         }
     }
 
-    private fun findWatch(pattenState: Int) {
+    private fun updateCurrentWatch(id: Long) {
         viewModelScope.launch {
-            repository.findWatch(pattenState).collect {
-                _watchFlow.emit(when (sortType.value) {
-                    SortType.TITLE -> it.sortedBy { it.title }
-                    SortType.CREATE_TIME -> it.sortedBy { it.createTime }
-                    SortType.CHANGE_TIME -> it.sortedBy { it.changeTime }.reversed()
-                })
-            }
+            _currentWatchFlow.emit(repository.findWatch(id))
         }
     }
 
-    private fun getAllData() {
+    private fun updateWatch(id: Long, watchState: Int, currentEpi: Int, totalEpi: Int) {
         viewModelScope.launch {
-            repository.getAllWatch().collect {
-                _watchFlow.emit(it.sortedBy { it.changeTime })
+            val watchStateNew = when (currentEpi) {
+                0 -> {
+                    1
+                }
+
+                totalEpi -> {
+                    2
+                }
+
+                else -> {
+                    0
+                }
             }
+
+            val entity = repository.findWatch(id)
+
+            val newEntity = entity.change(
+                currentEpisode = currentEpi,
+                totalEpisode = totalEpi,
+                watchState = if (watchState != -1) watchState else watchStateNew,
+                changeTime = System.currentTimeMillis(),
+            )
+
+            repository.updateWatch(newEntity)
         }
     }
 
-    private fun getIndex(type: Int) {
+    private fun createWatch(title: String, remarks: String, currentEpi: Int, totalEpi: Int) {
         viewModelScope.launch {
-            repository.findWatch(type).collect {
-                _watchFlow.emit(when (sortType.value) {
-                    SortType.TITLE -> it.sortedBy { it.title }
-                    SortType.CREATE_TIME -> it.sortedBy { it.createTime }
-                    SortType.CHANGE_TIME -> it.sortedBy { it.changeTime }.reversed()
-                })
-            }
+            val time = System.currentTimeMillis()
+
+            val entity = WatchEntity(
+                title = title,
+                currentEpisode = currentEpi,
+                totalEpisode = totalEpi,
+                watchState = when (currentEpi) {
+                    0 -> {
+                        1
+                    }
+
+                    totalEpi -> {
+                        2
+                    }
+
+                    else -> {
+                        0
+                    }
+                },
+                createTime = time,
+                changeTime = time,
+                remarks = remarks,
+                isDelete = false
+            )
+
+            repository.insertWatch(entity)
         }
     }
 
-    private fun findWatch(pattenState: Int, pattenString: String) {
+    private fun epiChange(id: Long, num: Int) {
         viewModelScope.launch {
-            repository.findWatchFlow(pattenState, pattenString).collect {
-                _watchFlow.emit(it)
+            val time = System.currentTimeMillis()
+
+            val entity = repository.findWatch(id)
+
+            val currentEpisode = if (num > 0 && entity.currentEpisode < entity.totalEpisode) {
+                entity.currentEpisode + num
+            } else if (num < 0 && entity.currentEpisode > 0) {
+                entity.currentEpisode + num
+            } else {
+                entity.currentEpisode
+            }
+
+            val watchingState: Int = when (currentEpisode) {
+                0 -> 1
+                entity.totalEpisode -> 2
+                else -> 0
+            }
+
+            val newEntity = entity.change(
+                currentEpisode = currentEpisode,
+                watchState = watchingState,
+                changeTime = time
+            )
+
+            channel.send(MainIntent.UpdateData(newEntity))
+        }
+    }
+
+    private fun deleteWatch(id: Long) {
+        viewModelScope.launch {
+            val entity = repository.findWatch(id)
+
+            repository.updateWatch(entity.change(isDelete = true))
+        }
+    }
+
+    private fun deleteWatch(entity: WatchEntity) {
+        viewModelScope.launch {
+            val newEntity = entity.change(isDelete = true)
+            repository.updateWatch(newEntity)
+        }
+    }
+
+    private fun getAllWatch() {
+        viewModelScope.launch {
+            repository.getAllWatch().collect { watch->
+                _watchFlow.emit(watch.sortedBy { it.changeTime }.reversed())
             }
         }
     }
@@ -103,25 +193,6 @@ class MainViewModel @Inject constructor(private val repository: WatchRepository)
             repository.findWatchTitleIsAlive(title).collect {
                 _watchTitleIsAlive.emit(it.isNotEmpty())
             }
-        }
-    }
-
-    private fun sortType(sortType: SortType) {
-        viewModelScope.launch {
-            _sortType.emit(sortType)
-            val buff = watchFlow
-            _watchFlow.emit(when (sortType) {
-                SortType.TITLE -> buff.value.sortedBy { it.title }
-                SortType.CREATE_TIME -> buff.value.sortedBy { it.createTime }
-                SortType.CHANGE_TIME -> buff.value.sortedBy { it.changeTime }
-            })
-            /*sp.edit().putInt("SORT_TYPE", let {
-                when (sortType) {
-                    SortType.TITLE -> 0
-                    SortType.CREATE_TIME -> 1
-                    SortType.CHANGE_TIME -> 2
-                }
-            }).apply()*/
         }
     }
 }

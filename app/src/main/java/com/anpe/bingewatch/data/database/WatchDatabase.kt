@@ -6,9 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.data.entity.WatchEntity
 
-@Database(entities = [WatchNewEntity::class], version = 1, exportSchema = false)
+@Database(entities = [WatchEntity::class], version = 1, exportSchema = false)
 abstract class WatchDatabase : RoomDatabase() {
     companion object {
         private var instance: WatchDatabase? = null

@@ -1,6 +1,12 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <string name="app_name">Binge Watch</string>
     <string name="unknown">UNKNOWN</string>
+
+    <!--dialog-->
+    <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+    <string name="delete">Delete</string>
+    <string name="update">Update</string>
 
     <!--main screen-->
     <string name="search_tip">search</string>
@@ -15,6 +21,11 @@
     <string name="want_pager">Want</string>
     <string name="watched_pager">Watched</string>
 
+    <!--topBar-->
+    <string name="watching">Watching</string>
+    <string name="want">Want</string>
+    <string name="watched">Watched</string>
+
     <!--bottom sheet pager-->
     <string name="tv_name">TV name</string>
     <string name="current_episode">current episode</string>
@@ -23,7 +34,6 @@
     <string name="current_episode_tip">plz input number</string>
     <string name="all_episode_tip">plz input number and not 0</string>
     <string name="input_error">plz input all</string>
-    <string name="cancel" tools:ignore="ButtonCase">cancel</string>
-    <string name="input_state">educational addition</string>
-    <string name="apply">apply</string>
+    <string name="type_error">Input type error</string>
+    <string name="input_state">Continue addition</string>
 </resources>

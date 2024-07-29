@@ -1,22 +1,26 @@
 package com.anpe.bingewatch.data.repository
 
-import com.anpe.bingewatch.data.entity.WatchNewEntity
+import com.anpe.bingewatch.data.entity.WatchEntity
 import kotlinx.coroutines.flow.Flow
 
 interface WatchRepository {
-    fun insertWatch(vararg entity: WatchNewEntity)
+    fun insertWatch(vararg entity: WatchEntity)
 
-    fun updateWatch(vararg entity: WatchNewEntity)
+    fun updateWatch(vararg entity: WatchEntity)
 
-    fun deleteWatch(vararg entity: WatchNewEntity)
+    fun deleteWatch(vararg entity: WatchEntity)
 
     fun deleteAllWatch()
 
-    fun getAllWatch(): Flow<List<WatchNewEntity>>
+    fun deleteWatch(id: Long)
 
-    fun findWatch(pattenState: Int): Flow<List<WatchNewEntity>>
+    fun getAllWatch(): Flow<List<WatchEntity>>
 
-    fun findWatchFlow(pattenState: Int, pattenTitle: String): Flow<List<WatchNewEntity>>
+//    fun findWatch(pattenState: Int): Flow<List<WatchEntity>>
 
-    fun findWatchTitleIsAlive(patten: String): Flow<List<WatchNewEntity>>
+    suspend fun findWatch(id: Long): WatchEntity
+
+//    fun findWatchFlow(pattenState: Int, pattenTitle: String): Flow<List<WatchEntity>>
+
+    fun findWatchTitleIsAlive(patten: String): Flow<List<WatchEntity>>
 }

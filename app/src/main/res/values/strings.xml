@@ -2,6 +2,12 @@
     <string name="app_name">煲剧助手</string>
     <string name="unknown">未知</string>
 
+    <!--dialog-->
+    <string name="cancel">取消</string>
+    <string name="apply">提交</string>
+    <string name="delete">删除</string>
+    <string name="update">更新</string>
+
     <!--main screen-->
     <string name="search_tip">搜索</string>
 
@@ -15,6 +21,11 @@
     <string name="want_pager">想观看</string>
     <string name="watched_pager">已完结</string>
 
+    <!--topBar-->
+    <string name="watching">追剧</string>
+    <string name="want">想看</string>
+    <string name="watched">已看</string>
+
     <!--bottom sheet pager-->
     <string name="tv_name">剧名</string>
     <string name="current_episode">当前集数</string>
@@ -23,7 +34,6 @@
     <string name="current_episode_tip">请输入数字</string>
     <string name="all_episode_tip">请输入数字且不为零</string>
     <string name="input_error">请填上所有输入框</string>
+    <string name="type_error">输入框有输入错误</string>
     <string name="input_state">连续添加</string>
-    <string name="cancel">取消</string>
-    <string name="apply">提交</string>
 </resources>
