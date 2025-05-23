@@ -4,7 +4,6 @@ import com.anpe.bingewatch.data.database.WatchDao
 import com.anpe.bingewatch.data.entity.WatchEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,6 +20,12 @@ class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchReposi
         }
     }
 
+    override fun upsertWatch(vararg entity: WatchEntity) {
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.upsertWatch(*entity)
+        }
+    }
+
     override fun deleteWatch(vararg entity: WatchEntity) {
         CoroutineScope(Dispatchers.IO).launch {
             dao.deleteWatch(*entity)
@@ -28,7 +33,9 @@ class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchReposi
     }
 
     override fun deleteWatch(id: Long) {
-
+        CoroutineScope(Dispatchers.IO).launch {
+            dao.deleteWatch(id)
+        }
     }
 
     override fun deleteAllWatch() {
@@ -37,7 +44,9 @@ class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchReposi
         }
     }
 
-    override fun getAllWatch() = dao.getAllWatch()
+    override fun getAllWatchFlow() = dao.getAllWatchFlow()
+
+    override suspend fun getAllWatch(): List<WatchEntity> = dao.getAllWatch()
 
 //    override fun findWatch(pattenState: Int) = dao.findWatchFlow(pattenState)
 
@@ -45,5 +54,5 @@ class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchReposi
 
 //    override fun findWatchFlow(pattenState: Int, pattenTitle: String) = dao.findWatchFlow(pattenState, pattenTitle)
 
-    override fun findWatchTitleIsAlive(patten: String) = dao.findWatchTitleFlow(patten)
+    override suspend fun findWatchTitleIsAlive(patten: String) = dao.findWatchTitle(patten)
 }

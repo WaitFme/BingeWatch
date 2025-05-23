@@ -29,10 +29,10 @@
     <!--bottom sheet pager-->
     <string name="tv_name">剧名</string>
     <string name="current_episode">当前集数</string>
-    <string name="all_episode">总集数</string>
+    <string name="total_episode">总集数</string>
     <string name="tv_name_tip">该名称已存在</string>
-    <string name="current_episode_tip">请输入数字</string>
-    <string name="all_episode_tip">请输入数字且不为零</string>
+    <string name="current_episode_tip">当前数不能大于总集数</string>
+    <string name="all_episode_tip">请输入纯数字且不为零不小于当前集数</string>
     <string name="input_error">请填上所有输入框</string>
     <string name="type_error">输入框有输入错误</string>
     <string name="input_state">连续添加</string>

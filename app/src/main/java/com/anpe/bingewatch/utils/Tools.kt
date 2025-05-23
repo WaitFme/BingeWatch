@@ -2,10 +2,15 @@ package com.anpe.bingewatch.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.anpe.bingewatch.data.entity.WatchEntity
 import com.anpe.bingewatch.utils.Tools.Companion.toDateStr
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -68,6 +73,17 @@ class Tools {
                 remarks = remarks?:entity.remarks,
                 isDelete = isDelete?:entity.isDelete
             )
+        }
+
+        fun getWatchState(ce: Int, te: Int): Int = when (ce) {
+            0 -> 1
+            te -> 2
+            else -> 0
+        }
+
+        fun String.numberFilter(): String {
+            val regex = Regex("\\d+")
+            return regex.findAll(this).joinToString { it.value }
         }
     }
 }

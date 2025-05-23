@@ -8,13 +8,17 @@ interface WatchRepository {
 
     fun updateWatch(vararg entity: WatchEntity)
 
+    fun upsertWatch(vararg entity: WatchEntity)
+
     fun deleteWatch(vararg entity: WatchEntity)
 
     fun deleteAllWatch()
 
     fun deleteWatch(id: Long)
 
-    fun getAllWatch(): Flow<List<WatchEntity>>
+    fun getAllWatchFlow(): Flow<List<WatchEntity>>
+
+    suspend fun getAllWatch(): List<WatchEntity>
 
 //    fun findWatch(pattenState: Int): Flow<List<WatchEntity>>
 
@@ -22,5 +26,5 @@ interface WatchRepository {
 
 //    fun findWatchFlow(pattenState: Int, pattenTitle: String): Flow<List<WatchEntity>>
 
-    fun findWatchTitleIsAlive(patten: String): Flow<List<WatchEntity>>
+    suspend fun findWatchTitleIsAlive(patten: String): List<WatchEntity>
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
@@ -45,13 +46,14 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.10"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    buildToolsVersion = "34.0.0"
 }
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -70,35 +72,33 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
-    implementation(libs.androidx.adaptive.android)
-    implementation(libs.androidx.material3.adaptive.navigation.suite.android)
+    implementation(libs.adaptive)
+    implementation(libs.adaptive.navigation.suite)
 
     // Navigation
     implementation(libs.navigation.compose)
 
-    // coil
+    // Constraintlayout
+    implementation(libs.constraintlayout)
+
+    // Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.gif)
 
-    // Accompanist
-    implementation(libs.accompanist.systemuicontroller)
-
-    // Moshi
-//    implementation(libs.moshi.kotlin)
-//    ksp(libs.moshi.kotlin.codegen)
-
-    // Retrofit2
-//    implementation(libs.retrofit)
-//    implementation(libs.converter.moshi)
-
-    // Jetpack room
+    // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // HIlt
+    // Hilt
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation)
     ksp(libs.hilt.compiler)
+
+    // Windows size class
+    implementation(libs.windowssizeclass)
+
+    implementation(libs.moshi.kotlin)
+    ksp(libs.moshi.kotlin.codegen)
 }
 

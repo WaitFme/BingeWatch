@@ -12,6 +12,9 @@ interface WatchDao {
     @Update
     fun updateWatch(vararg entity: WatchEntity)
 
+    @Upsert
+    fun upsertWatch(vararg entity: WatchEntity)
+
     @Delete
     fun deleteWatch(vararg entity: WatchEntity)
 
@@ -23,7 +26,11 @@ interface WatchDao {
 
     // DESC ASC
     @Query("SELECT * FROM watch_table WHERE is_delete LIKE 0 ORDER BY change_time DESC")
-    fun getAllWatch(): Flow<List<WatchEntity>>
+    fun getAllWatchFlow(): Flow<List<WatchEntity>>
+
+    // DESC ASC
+    @Query("SELECT * FROM watch_table WHERE is_delete LIKE 0 ORDER BY change_time DESC")
+    suspend fun getAllWatch(): List<WatchEntity>
 
     @Query("SELECT * FROM watch_table WHERE id LIKE :id")
     suspend fun findWatch(id: Long): WatchEntity
@@ -37,4 +44,7 @@ interface WatchDao {
 
     @Query("SELECT * FROM watch_table WHERE title LIKE :patten")
     fun findWatchTitleFlow(patten: String): Flow<List<WatchEntity>>
+
+    @Query("SELECT * FROM watch_table WHERE title LIKE :patten")
+    suspend fun findWatchTitle(patten: String): List<WatchEntity>
 }

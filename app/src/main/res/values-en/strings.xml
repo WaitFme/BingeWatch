@@ -29,7 +29,7 @@
     <!--bottom sheet pager-->
     <string name="tv_name">TV name</string>
     <string name="current_episode">current episode</string>
-    <string name="all_episode">all episode</string>
+    <string name="total_episode">total episode</string>
     <string name="tv_name_tip">this name is live</string>
     <string name="current_episode_tip">plz input number</string>
     <string name="all_episode_tip">plz input number and not 0</string>
