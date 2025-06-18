@@ -1,12 +1,17 @@
 package com.anpe.bingewatch.ui.host.screen.settings
 
+import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
@@ -20,9 +25,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.anpe.bingewatch.R
 import com.anpe.bingewatch.data.entity.WatchEntity
 import com.anpe.bingewatch.ui.host.screen.home.HomeViewModel
 import com.anpe.bingewatch.ui.widget.SettingItem
@@ -31,6 +43,7 @@ import com.anpe.bingewatch.utils.Tools
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -41,10 +54,15 @@ fun SettingsScreen(navController: NavHostController) {
 
     val settingsState by viewModel.settingsState.collectAsState()
 
+    val context = LocalContext.current
+
     LaunchedEffect(viewModel.viewEvent) {
         viewModel.viewEvent.collect {
             when (it) {
                 SettingsEvent.PopBack -> navController.popBackStack()
+                is SettingsEvent.Toast -> {
+                    Toast.makeText(context, it.msg, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -61,7 +79,10 @@ fun SettingsScreen(navController: NavHostController) {
                                 navController.popBackStack()
                             }
                         ) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "back")
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "back"
+                            )
                         }
                     }
                 )
@@ -80,8 +101,14 @@ fun SettingsScreen(navController: NavHostController) {
                             // 使用 ContentResolver 打开输入流
                             contentResolver.openInputStream(uri)?.use { inputStream ->
                                 // 使用 Moshi 解析 JSON 数据
-                                val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                                val jsonAdapter = moshi.adapter<List<WatchEntity>>(Types.newParameterizedType(List::class.java, WatchEntity::class.java))
+                                val moshi =
+                                    Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                                val jsonAdapter = moshi.adapter<List<WatchEntity>>(
+                                    Types.newParameterizedType(
+                                        List::class.java,
+                                        WatchEntity::class.java
+                                    )
+                                )
 
                                 // 从输入流读取 JSON 内容
                                 val jsonString = inputStream.bufferedReader().use { it.readText() }
@@ -93,9 +120,14 @@ fun SettingsScreen(navController: NavHostController) {
                                 if (watchEntities != null) {
                                     viewModel.uos(*watchEntities.map { it }.toTypedArray())
 
-                                    Toast.makeText(context, "导入成功!${watchEntities[0].title}", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(
+                                        context,
+                                        "导入成功!${watchEntities[0].title}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 } else {
-                                    Toast.makeText(context, "解析 JSON 失败!", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "解析 JSON 失败!", Toast.LENGTH_SHORT)
+                                        .show()
                                 }
                             }
                         }
@@ -110,7 +142,8 @@ fun SettingsScreen(navController: NavHostController) {
                         val outputStream = contentResolver.openOutputStream(it!!)
 
                         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                        val pt = Types.newParameterizedType(List::class.java, WatchEntity::class.java)
+                        val pt =
+                            Types.newParameterizedType(List::class.java, WatchEntity::class.java)
 
                         val jsonAdapter = moshi.adapter<List<WatchEntity>>(pt)
                         val toJson = jsonAdapter.toJson(settingsState.data)
@@ -133,6 +166,31 @@ fun SettingsScreen(navController: NavHostController) {
                         modifier = Modifier
                             .width(400.dp)
                     ) {
+                        var dialogFlag by remember {
+                            mutableStateOf(false)
+                        }
+                        SettingItem(
+                            title = "同步服务器",
+                            summary = if (settingsState.serverAddress.isEmpty()) {
+                                "设置服务器地址"
+                            } else {
+                                settingsState.serverAddress
+                            },
+                            onClick = {
+                                scope.launch {
+                                    dialogFlag = true
+                                }
+                            })
+                        SettingItem(title = "同步数据", summary = "同步服务器数据", onClick = {
+                            scope.launch {
+                                viewModel.dispatch(SettingsAction.Sync)
+                            }
+                        })
+                        SettingItem(title = "上传数据", summary = "上传数据到服务器", onClick = {
+                            scope.launch {
+                                viewModel.dispatch(SettingsAction.Upload)
+                            }
+                        })
                         SettingItem(title = "导出数据", summary = "导出数据到Json", onClick = {
                             scope.launch {
                                 viewModel.dispatch(SettingsAction.ExportData)
@@ -148,6 +206,86 @@ fun SettingsScreen(navController: NavHostController) {
                                 viewModel.dispatch(SettingsAction.ShowDialog)
                             }
                         })
+
+                        if (dialogFlag) {
+//                            Dialog(onDismissRequest = { dialogFlag = false }) {
+//                                Card(
+//                                    modifier = Modifier
+//                                        .size(400.dp, 300.dp)
+//                                ) {
+//                                    OutlinedTextField(
+//                                        value = settingsState.serverAddress,
+//                                        label = {
+//                                            Text(
+//                                                text = "设置服务器地址"
+//                                            )
+//                                        },
+//                                        keyboardOptions = KeyboardOptions(
+//                                            keyboardType = KeyboardType.Text,
+//                                            imeAction = ImeAction.Done
+//                                        ),
+//                                        onValueChange = {
+//                                            scope.launch {
+//                                                viewModel.dispatch(
+//                                                    SettingsAction.SettingServerAddress(
+//                                                        it.toString()
+//                                                    )
+//                                                )
+//                                            }
+//                                        }
+//                                    )
+//                                }
+//                            }
+                            AlertDialog(
+                                title = {
+                                    OutlinedTextField(
+                                        value = settingsState.serverAddress1,
+                                        label = { Text(text = "设置服务器地址") },
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Text,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        onValueChange = {
+                                            scope.launch {
+                                                viewModel.dispatch(
+                                                    SettingsAction.SettingServerAddress(
+                                                        it.toString()
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    )
+                                },
+                                onDismissRequest = {
+                                    scope.launch {
+                                        dialogFlag = false
+                                    }
+                                },
+                                dismissButton = {
+                                    Button(onClick = {
+                                        scope.launch {
+                                            viewModel.dispatch(SettingsAction.DismissDialog)
+                                        }
+                                    }) {
+                                        Text(text = "CANCEL")
+                                    }
+                                },
+                                confirmButton = {
+                                    Button(onClick = {
+                                        scope.launch {
+                                            viewModel.dispatch(SettingsAction.ClearData)
+                                        }
+                                        Toast.makeText(
+                                            context,
+                                            "delete success",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }) {
+                                        Text(text = "DELETE")
+                                    }
+                                }
+                            )
+                        }
 
                         /*Test(
                             title = "列表排序方式",

@@ -3,7 +3,7 @@ package com.anpe.bingewatch.ui.host.screen.home
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anpe.bingewatch.data.repository.WatchRepository
+import com.anpe.bingewatch.data.repository.DaoRepository
 import com.anpe.bingewatch.utils.Tools.Companion.getWatchState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(private val repository: WatchRepository) : ViewModel() {
+class HomeViewModel @Inject constructor(private val daoRepo: DaoRepository) : ViewModel() {
     companion object {
 //        private const val TAG = "HomeViewModel"
     }
@@ -54,7 +54,7 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
 
     private fun refreshData() {
         viewModelScope.launch {
-            repository.getAllWatchFlow().collect { watch ->
+            daoRepo.getAllWatchFlow().collect { watch ->
                 _viewState.emit(homeState.value.copy(data = watch.sortedBy { it.changeTime }.reversed()))
             }
         }
@@ -68,11 +68,11 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
 
     private fun increaseEpi(id: Long) {
         viewModelScope.launch {
-            val watch = repository.findWatch(id)
+            val watch = daoRepo.findWatch(id)
             if (watch.currentEpisode < watch.totalEpisode) {
                 val newEpisode = watch.currentEpisode + 1
 
-                repository.upsertWatch(watch.copy(
+                daoRepo.upsertWatch(watch.copy(
                     currentEpisode = newEpisode,
                     changeTime = System.currentTimeMillis(),
                     watchState = if (newEpisode >= watch.totalEpisode) 2 else 0
@@ -83,11 +83,11 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
 
     private fun decreaseEpi(id: Long) {
         viewModelScope.launch {
-            val watch = repository.findWatch(id)
+            val watch = daoRepo.findWatch(id)
             if (watch.currentEpisode > 0) {
                 val newEpisode = watch.currentEpisode - 1
 
-                repository.upsertWatch(watch.copy(
+                daoRepo.upsertWatch(watch.copy(
                     currentEpisode = newEpisode,
                     changeTime = System.currentTimeMillis(),
                     watchState = if (newEpisode <= 0) 1 else 0
@@ -133,7 +133,7 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
 
     private fun updateData(id: Long) {
         viewModelScope.launch {
-            val watch = repository.findWatch(id)
+            val watch = daoRepo.findWatch(id)
             if (homeState.value.currentEpi.text.isEmpty() || homeState.value.totalEpi.text.isEmpty()) {
                 _viewState.emit(homeState.value.copy(errorMessage = "Input cannot be empty"))
                 return@launch
@@ -141,7 +141,7 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
             val nCEpi = homeState.value.currentEpi.text.toInt()
             val nTEpi = homeState.value.totalEpi.text.toInt()
 
-            repository.upsertWatch(watch.copy(
+            daoRepo.upsertWatch(watch.copy(
                 currentEpisode = nCEpi,
                 totalEpisode = nTEpi,
                 changeTime = System.currentTimeMillis(),
@@ -153,14 +153,14 @@ class HomeViewModel @Inject constructor(private val repository: WatchRepository)
 
     private fun deleteData(id: Long) {
         viewModelScope.launch {
-            repository.deleteWatch(id)
+            daoRepo.deleteWatch(id)
             dismissDialog()
         }
     }
 
     private fun showDialog(id: Long) {
         viewModelScope.launch {
-            val watch = repository.findWatch(id)
+            val watch = daoRepo.findWatch(id)
             _viewState.emit(homeState.value.copy(id = watch.id))
             _viewState.emit(homeState.value.copy(title = watch.title))
             _viewState.emit(homeState.value.copy(currentEpi = TextFieldValue(text = watch.currentEpisode.toString())))

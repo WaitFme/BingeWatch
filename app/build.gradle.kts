@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.anpe.bingewatch"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.anpe.bingewatch"
         minSdk = 29
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        targetSdk = 35
+        versionCode = 25061810
+        versionName = "0.114.514"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -45,15 +45,15 @@ android {
     buildFeatures {
         compose = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.15"
+//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
-    buildToolsVersion = "34.0.0"
+    buildToolsVersion = "35.0.0"
 }
 dependencies {
     implementation(libs.androidx.core.ktx)
@@ -100,5 +100,11 @@ dependencies {
 
     implementation(libs.moshi.kotlin)
     ksp(libs.moshi.kotlin.codegen)
+
+    implementation(libs.retrofit2)
+    implementation(libs.retrofit2.converter.moshi)
+
+    implementation(libs.datastore.preferences)
+    implementation(libs.datastore)
 }
 

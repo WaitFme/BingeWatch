@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-class RepositoryImpl @Inject constructor(private val dao: WatchDao): WatchRepository {
+class DaoRepositoryImpl @Inject constructor(private val dao: WatchDao): DaoRepository {
     override fun insertWatch(vararg entity: WatchEntity) {
         CoroutineScope(Dispatchers.IO).launch {
             dao.insertWatch(*entity)

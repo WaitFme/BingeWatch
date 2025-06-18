@@ -3,7 +3,7 @@ package com.anpe.bingewatch.data.repository
 import com.anpe.bingewatch.data.entity.WatchEntity
 import kotlinx.coroutines.flow.Flow
 
-interface WatchRepository {
+interface DaoRepository {
     fun insertWatch(vararg entity: WatchEntity)
 
     fun updateWatch(vararg entity: WatchEntity)

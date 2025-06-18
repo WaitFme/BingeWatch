@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anpe.bingewatch.data.entity.WatchEntity
-import com.anpe.bingewatch.data.repository.WatchRepository
+import com.anpe.bingewatch.data.repository.DaoRepository
 import com.anpe.bingewatch.utils.Tools.Companion.getWatchState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class EditViewModel @Inject constructor(private val repository: WatchRepository) : ViewModel() {
+class EditViewModel @Inject constructor(private val daoRepo: DaoRepository) : ViewModel() {
     private val _viewEvents = Channel<EditEvent>(Channel.BUFFERED)
     val viewEvents = _viewEvents.receiveAsFlow()
 
@@ -34,7 +34,7 @@ class EditViewModel @Inject constructor(private val repository: WatchRepository)
             isDelete = false
         )
 
-        repository.upsertWatch(entity)
+        daoRepo.upsertWatch(entity)
     }
 
     private fun createData() {
@@ -62,7 +62,7 @@ class EditViewModel @Inject constructor(private val repository: WatchRepository)
 
     fun changeTitle(title: String) {
         viewModelScope.launch {
-            _editState.emit(_editState.value.copy(title = title, titleAlive = repository.findWatchTitleIsAlive(title).isNotEmpty()))
+            _editState.emit(_editState.value.copy(title = title, titleAlive = daoRepo.findWatchTitleIsAlive(title).isNotEmpty()))
         }
     }
 

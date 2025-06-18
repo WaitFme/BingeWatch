@@ -6,4 +6,7 @@ sealed class SettingsAction {
     data object ClearData: SettingsAction()
     data object ShowDialog: SettingsAction()
     data object DismissDialog: SettingsAction()
+    data object Sync: SettingsAction()
+    data object Upload: SettingsAction()
+    data class SettingServerAddress(val url: String): SettingsAction()
 }
