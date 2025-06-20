@@ -16,4 +16,5 @@ sealed class HomeAction {
 
     data object DismissDialog: HomeAction()
     data object RefreshData : HomeAction()
+    data object SyncData : HomeAction()
 }

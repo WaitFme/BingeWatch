@@ -1,6 +1,6 @@
 package com.anpe.bingewatch.data.dto.response
 
-import com.anpe.bingewatch.data.dto.WatchDto
+import com.anpe.bingewatch.data.dto.conmon.WatchDto
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 

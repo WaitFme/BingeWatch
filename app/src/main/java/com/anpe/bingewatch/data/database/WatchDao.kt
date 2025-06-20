@@ -6,45 +6,33 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface WatchDao {
-    @Insert
-    fun insertWatch(vararg entity: WatchEntity)
-
-    @Update
-    fun updateWatch(vararg entity: WatchEntity)
-
     @Upsert
     fun upsertWatch(vararg entity: WatchEntity)
-
-    @Delete
-    fun deleteWatch(vararg entity: WatchEntity)
 
     @Query("DELETE FROM watch_table")
     fun deleteAllWatch()
 
-    @Query("DELETE FROM watch_table WHERE id = :id")
-    fun deleteWatch(id: Long)
-
-    // DESC ASC
-    @Query("SELECT * FROM watch_table WHERE is_delete LIKE 0 ORDER BY change_time DESC")
+    @Query("SELECT * FROM watch_table ORDER BY id ASC")
     fun getAllWatchFlow(): Flow<List<WatchEntity>>
 
-    // DESC ASC
-    @Query("SELECT * FROM watch_table WHERE is_delete LIKE 0 ORDER BY change_time DESC")
-    suspend fun getAllWatch(): List<WatchEntity>
+    @Query("SELECT * FROM watch_table WHERE is_delete = 0 ORDER BY title ASC")
+    fun findAllWatchByTitleFlow(): Flow<List<WatchEntity>>
 
-    @Query("SELECT * FROM watch_table WHERE id LIKE :id")
-    suspend fun findWatch(id: Long): WatchEntity
+    @Query("SELECT * FROM watch_table WHERE is_delete = 0 ORDER BY create_time DESC")
+    fun findAllWatchByCreateTimeFlow(): Flow<List<WatchEntity>>
 
-    // New
-//    @Query("SELECT * FROM watch_table WHERE watch_state LIKE :pattenState ORDER BY change_time DESC")
-//    fun findWatchFlow(pattenState: Int): Flow<List<WatchEntity>>
-
-//    @Query("SELECT * FROM watch_table WHERE watch_state LIKE :pattenState AND title LIKE :pattenTitle ORDER BY change_time DESC")
-//    fun findWatchFlow(pattenState: Int, pattenTitle: String): Flow<List<WatchEntity>>
+    @Query("SELECT * FROM watch_table WHERE is_delete = 0 ORDER BY change_time DESC")
+    fun findAllWatchByChangeTimeFlow(): Flow<List<WatchEntity>>
 
     @Query("SELECT * FROM watch_table WHERE title LIKE :patten")
     fun findWatchTitleFlow(patten: String): Flow<List<WatchEntity>>
 
+    @Query("SELECT * FROM watch_table ORDER BY id ASC")
+    suspend fun getAllWatch(): List<WatchEntity>
+
+    @Query("SELECT * FROM watch_table WHERE id = :id ORDER BY id ASC")
+    suspend fun findWatch(id: Long): WatchEntity
+
     @Query("SELECT * FROM watch_table WHERE title LIKE :patten")
-    suspend fun findWatchTitle(patten: String): List<WatchEntity>
+    suspend fun findWatch(patten: String): List<WatchEntity>
 }

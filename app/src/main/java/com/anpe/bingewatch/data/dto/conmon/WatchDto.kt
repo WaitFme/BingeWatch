@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.data.dto
+package com.anpe.bingewatch.data.dto.conmon
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass

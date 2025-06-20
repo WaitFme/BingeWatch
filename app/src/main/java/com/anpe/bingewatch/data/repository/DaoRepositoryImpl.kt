@@ -4,37 +4,14 @@ import com.anpe.bingewatch.data.database.WatchDao
 import com.anpe.bingewatch.data.entity.WatchEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 class DaoRepositoryImpl @Inject constructor(private val dao: WatchDao): DaoRepository {
-    override fun insertWatch(vararg entity: WatchEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.insertWatch(*entity)
-        }
-    }
-
-    override fun updateWatch(vararg entity: WatchEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.updateWatch(*entity)
-        }
-    }
-
     override fun upsertWatch(vararg entity: WatchEntity) {
         CoroutineScope(Dispatchers.IO).launch {
             dao.upsertWatch(*entity)
-        }
-    }
-
-    override fun deleteWatch(vararg entity: WatchEntity) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.deleteWatch(*entity)
-        }
-    }
-
-    override fun deleteWatch(id: Long) {
-        CoroutineScope(Dispatchers.IO).launch {
-            dao.deleteWatch(id)
         }
     }
 
@@ -46,13 +23,15 @@ class DaoRepositoryImpl @Inject constructor(private val dao: WatchDao): DaoRepos
 
     override fun getAllWatchFlow() = dao.getAllWatchFlow()
 
-    override suspend fun getAllWatch(): List<WatchEntity> = dao.getAllWatch()
+    override fun findAllWatchByTitleFlow(): Flow<List<WatchEntity>> = dao.findAllWatchByTitleFlow()
 
-//    override fun findWatch(pattenState: Int) = dao.findWatchFlow(pattenState)
+    override fun findAllWatchByCreateTimeFlow(): Flow<List<WatchEntity>> = dao.findAllWatchByCreateTimeFlow()
+
+    override fun findAllWatchByChangeTimeFlow(): Flow<List<WatchEntity>> = dao.findAllWatchByChangeTimeFlow()
+
+    override suspend fun getAllWatch(): List<WatchEntity> = dao.getAllWatch()
 
     override suspend fun findWatch(id: Long): WatchEntity = dao.findWatch(id)
 
-//    override fun findWatchFlow(pattenState: Int, pattenTitle: String) = dao.findWatchFlow(pattenState, pattenTitle)
-
-    override suspend fun findWatchTitleIsAlive(patten: String) = dao.findWatchTitle(patten)
+    override suspend fun findWatch(patten: String) = dao.findWatch(patten)
 }

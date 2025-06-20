@@ -50,6 +50,38 @@ fun SettingItem(
 }
 
 @Composable
+fun SettingItem(
+    modifier: Modifier = Modifier,
+    title: String,
+    onClick: () -> Unit = { },
+    summary: @Composable () -> Unit = { }
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                onClick()
+            }
+            .height(80.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(start = 15.dp, end = 15.dp)
+                .align(Alignment.CenterStart),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = title,
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            summary()
+        }
+    }
+}
+
+@Composable
 fun SettingItem1(
     modifier: Modifier = Modifier,
     title: String,

@@ -1,6 +1,7 @@
 package com.anpe.bingewatch.ui.host.screen.home
 
 import android.os.Build
+import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -8,9 +9,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -18,11 +22,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,21 +68,27 @@ fun HomeScreen(navControllerScreen: NavHostController) {
 
     val scope = rememberCoroutineScope()
 
+    val context = LocalContext.current
+
     val homeState by viewModel.homeState.collectAsStateWithLifecycle()
 
-    var showDialog by remember {
-        mutableStateOf(false)
-    }
+    var editDialog by remember { mutableStateOf(false) }
+
+    var lazyGridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
+        viewModel.dispatch(HomeAction.RefreshData)
+    }
+
+    LaunchedEffect(viewModel.viewEvent) {
         viewModel.viewEvent.collect {
             when (it) {
                 HomeEvent.ShowDialog -> {
-                    showDialog = true
+                    editDialog = true
                 }
 
                 HomeEvent.CloseDialog -> {
-                    showDialog = false
+                    editDialog = false
                 }
 
                 HomeEvent.PopBack -> {
@@ -92,9 +106,14 @@ fun HomeScreen(navControllerScreen: NavHostController) {
                 }
 
                 is HomeEvent.ShowToast -> {
+                    Toast.makeText(context, it.text, Toast.LENGTH_SHORT).show()
                 }
             }
         }
+    }
+
+    LaunchedEffect(homeState.data) {
+        lazyGridState.animateScrollToItem(0)
     }
 
     Scaffold(
@@ -108,6 +127,11 @@ fun HomeScreen(navControllerScreen: NavHostController) {
                 onNavigate = {
                     scope.launch {
                         viewModel.dispatch(HomeAction.NaviScreen(it))
+                    }
+                },
+                onSync = {
+                    scope.launch {
+                        viewModel.dispatch(HomeAction.SyncData)
                     }
                 }
             )
@@ -125,23 +149,17 @@ fun HomeScreen(navControllerScreen: NavHostController) {
             }
         },
     ) { pv ->
-        pv
         LazyVerticalGrid(
             modifier = Modifier
                 .padding(top = pv.calculateTopPadding())
                 .fillMaxSize(),
-            columns = GridCells.Adaptive(minSize = 250.dp),
+            state = lazyGridState,
+            columns = GridCells.Adaptive(minSize = 270.dp),
             contentPadding = PaddingValues(start = 10.dp, end = 10.dp, bottom = 100.dp)
         ) {
             homeState.data.forEach { entity ->
-                if (homeState.selectTab == entity.watchState) {
+                if (entity.watchState == homeState.selectTab) {
                     item(key = entity.id) {
-                        LaunchedEffect(viewModel.viewEvent) {
-                            viewModel.viewEvent.collect {
-                                if (it is HomeEvent.CloseDialog) showDialog = false
-                            }
-                        }
-
                         WatchItem(
                             modifier = Modifier
                                 .animateItem()
@@ -169,7 +187,7 @@ fun HomeScreen(navControllerScreen: NavHostController) {
         }
     }
 
-    if (showDialog) {
+    if (editDialog) {
         Dialog(
             title = homeState.title,
             currentEpi = homeState.currentEpi,
@@ -197,7 +215,8 @@ fun HomeScreen(navControllerScreen: NavHostController) {
 private fun TopBar(
     modifier: Modifier = Modifier,
     onSwitchTab: (Int) -> Unit,
-    onNavigate: (String) -> Unit
+    onNavigate: (String) -> Unit,
+    onSync: () -> Unit
 ) {
     val window = currentWindowAdaptiveInfo().windowSizeClass.windowWidthSizeClass
 
@@ -261,11 +280,29 @@ private fun TopBar(
                     }
                 }
             }
-            IconButton(
-                modifier = Modifier.padding(end = 5.dp),
-                onClick = { onNavigate(ScreenManager.SettingsScreen.route) }
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text("同步数据") } },
+                state = rememberTooltipState(),
             ) {
-                Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                IconButton(
+                    modifier = Modifier.padding(end = 0.dp),
+                    onClick = onSync
+                ) {
+                    Icon(imageVector = Icons.Default.Refresh, contentDescription = "Sync")
+                }
+            }
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text("设置") } },
+                state = rememberTooltipState(),
+            ) {
+                IconButton(
+                    modifier = Modifier.padding(end = 5.dp),
+                    onClick = { onNavigate(ScreenManager.SettingsScreen.route) }
+                ) {
+                    Icon(imageVector = Icons.Default.Settings, contentDescription = "Settings")
+                }
             }
         }
     )

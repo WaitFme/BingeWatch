@@ -1,6 +1,6 @@
 package com.anpe.bingewatch.data.mapper
 
-import com.anpe.bingewatch.data.dto.WatchDto
+import com.anpe.bingewatch.data.dto.conmon.WatchDto
 import com.anpe.bingewatch.data.entity.WatchEntity
 
 class WatchMapper {

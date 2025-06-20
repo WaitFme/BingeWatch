@@ -1,13 +1,15 @@
 package com.anpe.bingewatch.ui.host.screen.edit
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -15,18 +17,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -46,10 +54,14 @@ fun EditScreen(navController: NavHostController) {
 
     val editState by viewModel.editState.collectAsState()
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         viewModel.viewEvents.collect {
             when (it) {
                 EditEvent.PopBack -> navController.popBackStack()
+                is EditEvent.ShowToast -> Toast.makeText(context, it.text, Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }
@@ -88,7 +100,11 @@ fun EditScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(top = it.calculateTopPadding())
             ) {
-                val (titleRef, ceRef, teRef, timeSelectRef) = createRefs()
+                val (titleRef, ceRef, teRef, dataPickerRef, timePickerRef) = createRefs()
+
+                var title by remember { mutableStateOf(TextFieldValue("")) }
+                var cEpi by remember { mutableStateOf(TextFieldValue("")) }
+                var tEpi by remember { mutableStateOf(TextFieldValue("")) }
 
                 OutlinedTextField(
                     modifier = Modifier.constrainAs(titleRef) {
@@ -97,7 +113,7 @@ fun EditScreen(navController: NavHostController) {
                         end.linkTo(parent.end, 15.dp)
                         width = Dimension.fillToConstraints
                     },
-                    value = editState.title,
+                    value = title,
                     label = {
                         Text(
                             text = if (editState.titleAlive) stringResource(id = R.string.tv_name_tip) else
@@ -109,7 +125,8 @@ fun EditScreen(navController: NavHostController) {
                         imeAction = ImeAction.Next
                     ),
                     onValueChange = {
-                        viewModel.changeTitle(it)
+                        title = it
+                        viewModel.changeTitle(it.text)
                     }
                 )
 
@@ -121,7 +138,7 @@ fun EditScreen(navController: NavHostController) {
                         width = Dimension.fillToConstraints
                         horizontalChainWeight = 1f
                     },
-                    value = editState.currentEpisode,
+                    value = cEpi,
                     label = {
                         Text(text = stringResource(id = R.string.current_episode))
                     },
@@ -130,7 +147,8 @@ fun EditScreen(navController: NavHostController) {
                         imeAction = ImeAction.Next
                     ),
                     onValueChange = {
-                        viewModel.changeCE(it)
+                        cEpi = it
+                        viewModel.changeCE(it.text)
                     }
                 )
 
@@ -142,36 +160,60 @@ fun EditScreen(navController: NavHostController) {
                         width = Dimension.fillToConstraints
                         horizontalChainWeight = 1f
                     },
-                    value = editState.totalEpisode,
+                    value = tEpi,
                     label = { Text(text = stringResource(id = R.string.total_episode)) },
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Next
+                        keyboardType = KeyboardType.Number
                     ),
                     onValueChange = {
-                        viewModel.changeTE(it.numberFilter())
+                        tEpi = it
+                        viewModel.changeTE(it.text.numberFilter())
                     }
                 )
 
-                val tps = rememberDatePickerState(
-                    initialSelectedDateMillis = System.currentTimeMillis(),
-                    initialDisplayMode = DisplayMode.Input
-                )
-                tps.selectedDateMillis?.let {
-                    viewModel.changeCreateTime(it)
+                var showDataPiker by remember { mutableStateOf(false) }
+                Button(
+                    modifier = Modifier.constrainAs(dataPickerRef) {
+                        top.linkTo(ceRef.bottom)
+                        end.linkTo(parent.end, 15.dp)
+                    },
+                    onClick = {
+                        showDataPiker = true
+                    }
+                ) {
+                    Text("设置日期")
                 }
 
-                DatePicker(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(5.dp))
-                        .constrainAs(timeSelectRef) {
-                            start.linkTo(parent.start, 15.dp)
-                            top.linkTo(ceRef.bottom, 5.dp)
-                            end.linkTo(parent.end, 15.dp)
-                            width = Dimension.fillToConstraints
+                if (showDataPiker) {
+                    val pickerState = rememberDatePickerState(initialDisplayMode = DisplayMode.Input)
+                    val confirmEnabled by remember {
+                        derivedStateOf { pickerState.selectedDateMillis != null }
+                    }
+                    DatePickerDialog(
+                        onDismissRequest = { showDataPiker = false },
+                        dismissButton = {
+                            TextButton(onClick = {
+                                showDataPiker = false
+                            }) {
+                                Text("Cancel")
+                            }
                         },
-                    state = tps,
-                )
+                        confirmButton = {
+                            TextButton(onClick = {
+                                pickerState.selectedDateMillis?.let {
+                                    viewModel.changeCreateTime(it)
+                                }
+                                showDataPiker = false
+                            },
+                                enabled = confirmEnabled
+                            ) {
+                                Text("Ok")
+                            }
+                        },
+                    ) {
+                        DatePicker(state = pickerState)
+                    }
+                }
             }
         }
     )

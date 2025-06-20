@@ -14,7 +14,7 @@ android {
         applicationId = "com.anpe.bingewatch"
         minSdk = 29
         targetSdk = 35
-        versionCode = 25061810
+        versionCode = 25062018
         versionName = "0.114.514"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -45,9 +45,6 @@ android {
     buildFeatures {
         compose = true
     }
-//    composeOptions {
-//        kotlinCompilerExtensionVersion = "1.5.15"
-//    }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -72,6 +69,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    // Adaptive
     implementation(libs.adaptive)
     implementation(libs.adaptive.navigation.suite)
 
@@ -98,13 +96,16 @@ dependencies {
     // Windows size class
     implementation(libs.windowssizeclass)
 
+    // Moshi
     implementation(libs.moshi.kotlin)
     ksp(libs.moshi.kotlin.codegen)
 
+    // Retrofit2
     implementation(libs.retrofit2)
     implementation(libs.retrofit2.converter.moshi)
+//    implementation(libs.retrofit2.converter)
 
+    // DataStore
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
 }
-

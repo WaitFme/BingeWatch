@@ -1,20 +1,28 @@
 package com.anpe.bingewatch.ui.host.screen.settings
 
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,34 +33,22 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.constraintlayout.compose.Dimension
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.anpe.bingewatch.R
 import com.anpe.bingewatch.data.entity.WatchEntity
-import com.anpe.bingewatch.ui.host.screen.home.HomeViewModel
 import com.anpe.bingewatch.ui.widget.SettingItem
-import com.anpe.bingewatch.ui.widget.Test
-import com.anpe.bingewatch.utils.Tools
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.launch
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavHostController) {
     val viewModel: SettingsViewModel = hiltViewModel()
-
-    val settingsState by viewModel.settingsState.collectAsState()
 
     val context = LocalContext.current
 
@@ -87,248 +83,204 @@ fun SettingsScreen(navController: NavHostController) {
                     }
                 )
             },
-            content = { pv ->
-                val context = LocalContext.current
-                val scope = rememberCoroutineScope()
-
-                // 将json文件内容导入到数据库
-                val openSelectPhotoLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.GetContent(),
-                    onResult = { uri ->
-                        val contentResolver = context.contentResolver
-
-                        uri?.let {
-                            // 使用 ContentResolver 打开输入流
-                            contentResolver.openInputStream(uri)?.use { inputStream ->
-                                // 使用 Moshi 解析 JSON 数据
-                                val moshi =
-                                    Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                                val jsonAdapter = moshi.adapter<List<WatchEntity>>(
-                                    Types.newParameterizedType(
-                                        List::class.java,
-                                        WatchEntity::class.java
-                                    )
-                                )
-
-                                // 从输入流读取 JSON 内容
-                                val jsonString = inputStream.bufferedReader().use { it.readText() }
-
-                                // 解析 JSON 为 WatchEntity 对象列表
-                                val watchEntities = jsonAdapter.fromJson(jsonString)
-
-                                // 检查解析是否成功并将数据插入到数据库
-                                if (watchEntities != null) {
-                                    viewModel.uos(*watchEntities.map { it }.toTypedArray())
-
-                                    Toast.makeText(
-                                        context,
-                                        "导入成功!${watchEntities[0].title}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                } else {
-                                    Toast.makeText(context, "解析 JSON 失败!", Toast.LENGTH_SHORT)
-                                        .show()
-                                }
-                            }
-                        }
-                    }
+            content = {
+                SettingContent(
+                    modifier = Modifier
+                        .padding(top = it.calculateTopPadding()),
+                    viewModel = viewModel
                 )
+            }
+        )
+    }
+}
 
-                // 将数据库数据转成json文件保存到手机
-                val openSelectPhotoLauncherSave = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.CreateDocument("application/json"),
-                    onResult = {
-                        val contentResolver = context.contentResolver
-                        val outputStream = contentResolver.openOutputStream(it!!)
+@Composable
+fun SettingContent(modifier: Modifier, viewModel: SettingsViewModel) {
+    Column(
+        modifier = modifier
+    ) {
+        val settingsState by viewModel.viewState.collectAsState()
+        val scope = rememberCoroutineScope()
+        val context = LocalContext.current
 
-                        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                        val pt =
-                            Types.newParameterizedType(List::class.java, WatchEntity::class.java)
+        var expanded by remember { mutableStateOf(false) }
+        var serverDialog by remember { mutableStateOf(false) }
+        var deleteDialog by remember { mutableStateOf(false) }
 
-                        val jsonAdapter = moshi.adapter<List<WatchEntity>>(pt)
-                        val toJson = jsonAdapter.toJson(settingsState.data)
-                        outputStream?.use { stream ->
-                            stream.write(toJson.toString().toByteArray())
-                            stream.flush()
-                        }
-                    }
-                )
+        // 将json文件内容导入到数据库
+        val openSelectPhotoLauncher = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.GetContent(),
+            onResult = { uri ->
+                val contentResolver = context.contentResolver
 
-//                val sortType by viewModel.sortType.collectAsState()
-                val em = listOf(
-                    "按照标题排序",
-                    "按照创建时间排序",
-                    "按照修改时间排序"
-                )
-
-                Column(modifier = Modifier.padding(top = pv.calculateTopPadding())) {
-                    Column(
-                        modifier = Modifier
-                            .width(400.dp)
-                    ) {
-                        var dialogFlag by remember {
-                            mutableStateOf(false)
-                        }
-                        SettingItem(
-                            title = "同步服务器",
-                            summary = if (settingsState.serverAddress.isEmpty()) {
-                                "设置服务器地址"
-                            } else {
-                                settingsState.serverAddress
-                            },
-                            onClick = {
-                                scope.launch {
-                                    dialogFlag = true
-                                }
-                            })
-                        SettingItem(title = "同步数据", summary = "同步服务器数据", onClick = {
-                            scope.launch {
-                                viewModel.dispatch(SettingsAction.Sync)
-                            }
-                        })
-                        SettingItem(title = "上传数据", summary = "上传数据到服务器", onClick = {
-                            scope.launch {
-                                viewModel.dispatch(SettingsAction.Upload)
-                            }
-                        })
-                        SettingItem(title = "导出数据", summary = "导出数据到Json", onClick = {
-                            scope.launch {
-                                viewModel.dispatch(SettingsAction.ExportData)
-                            }
-                            val time = System.currentTimeMillis()
-                            openSelectPhotoLauncherSave.launch("Watch_bak_$time.json")
-                        })
-                        SettingItem(title = "导入数据", summary = "从磁盘导入Json数据", onClick = {
-                            openSelectPhotoLauncher.launch("application/json")
-                        })
-                        SettingItem(title = "清空数据", summary = "清空所有数据", onClick = {
-                            scope.launch {
-                                viewModel.dispatch(SettingsAction.ShowDialog)
-                            }
-                        })
-
-                        if (dialogFlag) {
-//                            Dialog(onDismissRequest = { dialogFlag = false }) {
-//                                Card(
-//                                    modifier = Modifier
-//                                        .size(400.dp, 300.dp)
-//                                ) {
-//                                    OutlinedTextField(
-//                                        value = settingsState.serverAddress,
-//                                        label = {
-//                                            Text(
-//                                                text = "设置服务器地址"
-//                                            )
-//                                        },
-//                                        keyboardOptions = KeyboardOptions(
-//                                            keyboardType = KeyboardType.Text,
-//                                            imeAction = ImeAction.Done
-//                                        ),
-//                                        onValueChange = {
-//                                            scope.launch {
-//                                                viewModel.dispatch(
-//                                                    SettingsAction.SettingServerAddress(
-//                                                        it.toString()
-//                                                    )
-//                                                )
-//                                            }
-//                                        }
-//                                    )
-//                                }
-//                            }
-                            AlertDialog(
-                                title = {
-                                    OutlinedTextField(
-                                        value = settingsState.serverAddress1,
-                                        label = { Text(text = "设置服务器地址") },
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Text,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        onValueChange = {
-                                            scope.launch {
-                                                viewModel.dispatch(
-                                                    SettingsAction.SettingServerAddress(
-                                                        it.toString()
-                                                    )
-                                                )
-                                            }
-                                        }
-                                    )
-                                },
-                                onDismissRequest = {
-                                    scope.launch {
-                                        dialogFlag = false
-                                    }
-                                },
-                                dismissButton = {
-                                    Button(onClick = {
-                                        scope.launch {
-                                            viewModel.dispatch(SettingsAction.DismissDialog)
-                                        }
-                                    }) {
-                                        Text(text = "CANCEL")
-                                    }
-                                },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        scope.launch {
-                                            viewModel.dispatch(SettingsAction.ClearData)
-                                        }
-                                        Toast.makeText(
-                                            context,
-                                            "delete success",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }) {
-                                        Text(text = "DELETE")
-                                    }
-                                }
+                uri?.let {
+                    // 使用 ContentResolver 打开输入流
+                    contentResolver.openInputStream(uri)?.use { inputStream ->
+                        // 使用 Moshi 解析 JSON 数据
+                        val moshi =
+                            Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                        val jsonAdapter = moshi.adapter<List<WatchEntity>>(
+                            Types.newParameterizedType(
+                                List::class.java,
+                                WatchEntity::class.java
                             )
+                        )
+
+                        // 从输入流读取 JSON 内容
+                        val jsonString = inputStream.bufferedReader().use { it.readText() }
+
+                        // 解析 JSON 为 WatchEntity 对象列表
+                        val watchEntities = jsonAdapter.fromJson(jsonString)
+
+                        // 检查解析是否成功并将数据插入到数据库
+                        if (watchEntities != null) {
+                            viewModel.uos(*watchEntities.map { it }.toTypedArray())
+
+                            Toast.makeText(
+                                context,
+                                "导入成功!${watchEntities[0].title}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            Toast.makeText(context, "解析 JSON 失败!", Toast.LENGTH_SHORT)
+                                .show()
                         }
-
-                        /*Test(
-                            title = "列表排序方式",
-                            itemList = em,
-                            summary = when (sortType) {
-                                SortType.TITLE -> em[0]
-                                SortType.CREATE_TIME -> em[1]
-                                SortType.CHANGE_TIME -> em[2]
-                            },
-                            onClick = {
-                                when (it) {
-                                    0 -> {
-//                                        viewModel.sortType(SortType.TITLE)
-                                    }
-
-                                    1 -> {
-//                                        viewModel.sortType(SortType.CREATE_TIME)
-                                    }
-
-                                    else -> {
-//                                        viewModel.sortType(SortType.CHANGE_TIME)
-                                    }
-                                }
-                            }
-                        )*/
                     }
                 }
+            }
+        )
 
-                if (settingsState.dialogStatus) {
+        // 将数据库数据转成json文件保存到手机
+        val openSelectPhotoLauncherSave = rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/json"),
+            onResult = {
+                val contentResolver = context.contentResolver
+                val outputStream = contentResolver.openOutputStream(it!!)
+
+                val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                val pt =
+                    Types.newParameterizedType(List::class.java, WatchEntity::class.java)
+
+                val jsonAdapter = moshi.adapter<List<WatchEntity>>(pt)
+                val toJson = jsonAdapter.toJson(settingsState.data)
+                outputStream?.use { stream ->
+                    stream.write(toJson.toString().toByteArray())
+                    stream.flush()
+                }
+            }
+        )
+
+        SettingItem(
+            title = "同步服务器",
+            summary = {
+                Text(
+                    text = if (settingsState.serverAddress.isEmpty()) {
+                        "设置服务器地址"
+                    } else {
+                        settingsState.serverAddress
+                    },
+                    fontSize = 15.sp
+                )
+
+                if (serverDialog) {
+                    AlertDialog(
+                        title = {
+                            OutlinedTextField(
+                                value = settingsState.serverAddress,
+                                label = { Text(text = "设置服务器地址") },
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Text,
+                                    imeAction = ImeAction.Done
+                                ),
+                                onValueChange = {
+                                    scope.launch {
+                                        viewModel.dispatch(
+                                            SettingsAction.ChangeServerAddress(
+                                                it.toString()
+                                            )
+                                        )
+                                    }
+                                },
+                                keyboardActions = KeyboardActions(onDone = {
+                                    serverDialog = false
+                                    Toast.makeText(context, "set success", Toast.LENGTH_SHORT)
+                                        .show()
+                                })
+                            )
+                        },
+                        onDismissRequest = {
+                            serverDialog = false
+                        },
+                        confirmButton = {
+                            Button(onClick = {
+                                serverDialog = false
+                            }) {
+                                Text(text = "Apply")
+                            }
+                        }
+                    )
+                }
+            },
+            onClick = { serverDialog = true }
+        )
+        SettingItem(title = "导出数据", summary = "导出数据到Json", onClick = {
+            scope.launch {
+                viewModel.dispatch(SettingsAction.ExportData)
+            }
+            val time = System.currentTimeMillis()
+            openSelectPhotoLauncherSave.launch("Watch_bak_$time.json")
+        })
+        SettingItem(title = "导入数据", summary = "从磁盘导入Json数据", onClick = {
+            openSelectPhotoLauncher.launch("application/json")
+        })
+        SettingItem(
+            title = "排序方式",
+            summary = {
+                val sortMaps = mapOf<Int, String>(
+                    0 to "按照标题排序",
+                    1 to "按照创建时间排序",
+                    2 to "按照修改时间排序",
+                )
+
+                Text(
+                    text = sortMaps[settingsState.sortType]?:"ERROR",
+                    fontSize = 15.sp
+                )
+
+                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    sortMaps.forEach {
+                        DropdownMenuItem(
+                            text = { Text(it.value) },
+                            onClick = {
+                                scope.launch {
+                                    viewModel.dispatch(SettingsAction.ChangeSortType(it.key))
+                                }
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            },
+            onClick = {
+                expanded = true
+            }
+        )
+        SettingItem(
+            title = "清空数据",
+            summary = {
+                Text("清空所有数据", fontSize = 15.sp)
+
+                if (deleteDialog) {
                     AlertDialog(
                         title = {
                             Text(text = "是否要清除所有数据？")
                         },
                         onDismissRequest = {
-                            scope.launch {
-                                viewModel.dispatch(SettingsAction.DismissDialog)
-                            }
+                            deleteDialog = false
                         },
                         dismissButton = {
                             Button(onClick = {
-                                scope.launch {
-                                    viewModel.dispatch(SettingsAction.DismissDialog)
-                                }
+                                deleteDialog = false
                             }) {
                                 Text(text = "CANCEL")
                             }
@@ -337,19 +289,18 @@ fun SettingsScreen(navController: NavHostController) {
                             Button(onClick = {
                                 scope.launch {
                                     viewModel.dispatch(SettingsAction.ClearData)
+                                    Log.d("SettingsScreen", "SettingContent: Clear")
                                 }
-                                Toast.makeText(
-                                    context,
-                                    "delete success",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                Toast.makeText(context, "delete success", Toast.LENGTH_SHORT).show()
+                                deleteDialog = false
                             }) {
                                 Text(text = "DELETE")
                             }
                         }
                     )
                 }
-            }
+            },
+            onClick = { deleteDialog = true }
         )
     }
 }
