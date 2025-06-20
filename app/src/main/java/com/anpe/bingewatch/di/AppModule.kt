@@ -26,7 +26,7 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
-    fun provideNetApi(@ApplicationContext context: Context): NetApi {
+    fun provideNetApi(): NetApi {
         val client = OkHttpClient.Builder()
             .callTimeout(5, TimeUnit.SECONDS)
             .build()

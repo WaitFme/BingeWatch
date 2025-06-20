@@ -10,7 +10,6 @@ import com.anpe.bingewatch.data.mapper.WatchMapper.Companion.toDto
 import com.anpe.bingewatch.data.mapper.WatchMapper.Companion.toEntity
 import com.anpe.bingewatch.data.repository.DaoRepository
 import com.anpe.bingewatch.data.repository.NetRepository
-import com.anpe.bingewatch.ui.host.screen.home.HomeEvent.*
 import com.anpe.bingewatch.utils.DataStoreManager
 import com.anpe.bingewatch.utils.Tools.Companion.getWatchState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,7 +55,7 @@ class HomeViewModel @Inject constructor(
                     is HomeAction.UpdateData -> updateData(it.id)
                     is HomeAction.DeleteData -> deleteData(it.id)
                     is HomeAction.ShowDialog -> showDialog(it.id)
-                    is HomeAction.NaviScreen -> _viewEvent.emit(NaviScreen(it.route))
+                    is HomeAction.NaviScreen -> _viewEvent.emit(HomeEvent.NaviScreen(it.route))
                     is HomeAction.DismissDialog -> dismissDialog()
                     HomeAction.SyncData -> syncData()
                 }

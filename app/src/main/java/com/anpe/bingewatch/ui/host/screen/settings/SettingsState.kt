@@ -2,7 +2,6 @@ package com.anpe.bingewatch.ui.host.screen.settings
 
 import androidx.compose.ui.text.input.TextFieldValue
 import com.anpe.bingewatch.data.entity.WatchEntity
-import com.anpe.bingewatch.utils.SortType
 
 data class SettingsState(
     val serverAddress: String = "",

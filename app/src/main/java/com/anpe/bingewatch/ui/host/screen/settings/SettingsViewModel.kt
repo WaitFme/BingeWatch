@@ -21,7 +21,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val daoRepo: DaoRepository,
-    private val netRepo: NetRepository,
     private val dataStoreManager: DataStoreManager
 ) : ViewModel() {
     companion object {

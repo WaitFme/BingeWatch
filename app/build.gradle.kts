@@ -108,4 +108,6 @@ dependencies {
     // DataStore
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
+
+    implementation(libs.splashscreen)
 }

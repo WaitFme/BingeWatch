@@ -100,7 +100,7 @@ fun EditScreen(navController: NavHostController) {
                     .fillMaxWidth()
                     .padding(top = it.calculateTopPadding())
             ) {
-                val (titleRef, ceRef, teRef, dataPickerRef, timePickerRef) = createRefs()
+                val (titleRef, ceRef, teRef, dataPickerRef) = createRefs()
 
                 var title by remember { mutableStateOf(TextFieldValue("")) }
                 var cEpi by remember { mutableStateOf(TextFieldValue("")) }
