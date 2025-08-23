@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.ui.widget
+package com.anpe.bingewatch.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

@@ -55,8 +55,8 @@ import androidx.navigation.NavHostController
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.anpe.bingewatch.R
 import com.anpe.bingewatch.ui.host.manage.ScreenManager
-import com.anpe.bingewatch.ui.widget.MyDialog
-import com.anpe.bingewatch.ui.widget.WatchItem
+import com.anpe.bingewatch.ui.host.screen.home.watchItem.WatchItem
+import com.anpe.bingewatch.ui.component.MyDialog
 import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.S)
@@ -73,7 +73,7 @@ fun HomeScreen(navControllerScreen: NavHostController) {
 
     var editDialog by remember { mutableStateOf(false) }
 
-    var lazyGridState = rememberLazyGridState()
+    val lazyGridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
         viewModel.dispatch(HomeAction.RefreshData)
@@ -111,7 +111,7 @@ fun HomeScreen(navControllerScreen: NavHostController) {
         }
     }
 
-    LaunchedEffect(homeState.data) {
+    LaunchedEffect(homeState.data.size) {
         lazyGridState.animateScrollToItem(0)
     }
 
@@ -161,8 +161,8 @@ fun HomeScreen(navControllerScreen: NavHostController) {
                     item(key = entity.id) {
                         WatchItem(
                             modifier = Modifier
-                                .animateItem()
-                                .padding(5.dp),
+                                .padding(5.dp)
+                                .animateItem(),
                             entity = entity,
                             increaseEpi = {
                                 scope.launch {
@@ -178,7 +178,8 @@ fun HomeScreen(navControllerScreen: NavHostController) {
                                 scope.launch {
                                     viewModel.dispatch(HomeAction.ShowDialog(entity.id))
                                 }
-                            }
+                            },
+                            onVibrate = { viewModel.vibrate(50) }
                         )
                     }
                 }

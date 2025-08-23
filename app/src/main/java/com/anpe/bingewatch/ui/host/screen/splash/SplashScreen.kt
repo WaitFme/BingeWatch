@@ -15,8 +15,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.anpe.bingewatch.ui.host.manage.ScreenManager
+import com.anpe.bingewatch.ui.host.screen.home.HomeAction
+import com.anpe.bingewatch.ui.host.screen.home.HomeViewModel
 import kotlinx.coroutines.delay
 
 @Composable

@@ -1,5 +1,7 @@
 package com.anpe.bingewatch.ui.host.screen.home
 
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
@@ -13,6 +15,7 @@ import com.anpe.bingewatch.data.repository.NetRepository
 import com.anpe.bingewatch.utils.DataStoreManager
 import com.anpe.bingewatch.utils.Tools.Companion.getWatchState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -27,7 +31,8 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val daoRepo: DaoRepository,
     private val netRepo: NetRepository,
-    private val dataStore: DataStoreManager
+    private val dataStore: DataStoreManager,
+    private val vibrator: Vibrator
 ) : ViewModel() {
     companion object {
         private const val TAG = "HomeViewModel"
@@ -48,8 +53,8 @@ class HomeViewModel @Inject constructor(
                 when (it) {
                     is HomeAction.RefreshData -> refreshData()
                     is HomeAction.ChangeTabIndex -> changeTabIndex(it.index)
-                    is HomeAction.IncreaseEpi -> increaseEpi(it.id)
-                    is HomeAction.DecreaseEpi -> decreaseEpi(it.id)
+                    is HomeAction.IncreaseEpi -> modifyEpisode(it.id, 1)
+                    is HomeAction.DecreaseEpi -> modifyEpisode(it.id, -1)
                     is HomeAction.ChangeCurrentEpi -> changeCurrentEpi(it.cEpi)
                     is HomeAction.ChangeTotalEpi -> changeTotalEpi(it.tEpi)
                     is HomeAction.UpdateData -> updateData(it.id)
@@ -67,54 +72,41 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             val sortType = dataStore.readIntPreference("sort_type").first()
 
-            if (sortType == 0) {
-                daoRepo.findAllWatchByTitleFlow().collect { watch ->
-                    _viewState.emit(homeState.value.copy(data = watch))
-                }
-            } else if (sortType == 1) {
-                daoRepo.findAllWatchByCreateTimeFlow().collect { watch ->
-                    _viewState.emit(homeState.value.copy(data = watch))
-                }
-            } else {
-                daoRepo.findAllWatchByChangeTimeFlow().collect { watch ->
-                    _viewState.emit(homeState.value.copy(data = watch))
-                }
+            val flow = when (sortType) {
+                0 -> daoRepo.findAllWatchByTitleFlow()
+                1 -> daoRepo.findAllWatchByCreateTimeFlow()
+                else -> daoRepo.findAllWatchByChangeTimeFlow()
+            }
+
+            flow.collect { watch ->
+                _viewState.update { it.copy(data = watch) }
             }
         }
     }
 
     private fun changeTabIndex(index: Int) {
-        viewModelScope.launch {
-            _viewState.value = _viewState.value.copy(selectTab = index)
-        }
+        _viewState.update { it.copy(selectTab = index) }
     }
 
-    private fun increaseEpi(id: Long) {
+    private fun modifyEpisode(id: Long, delta: Int) {
         viewModelScope.launch {
-            val watch = daoRepo.findWatch(id)
-            if (watch.currentEpisode < watch.totalEpisode) {
-                val newEpisode = watch.currentEpisode + 1
+            try {
+                val watch = daoRepo.findWatch(id)
+                val newEpisode = (watch.currentEpisode + delta).coerceIn(0, watch.totalEpisode)
 
-                daoRepo.upsertWatch(watch.copy(
-                    currentEpisode = newEpisode,
-                    changeTime = System.currentTimeMillis(),
-                    watchState = if (newEpisode >= watch.totalEpisode) 2 else 0
-                ))
-            }
-        }
-    }
-
-    private fun decreaseEpi(id: Long) {
-        viewModelScope.launch {
-            val watch = daoRepo.findWatch(id)
-            if (watch.currentEpisode > 0) {
-                val newEpisode = watch.currentEpisode - 1
-
-                daoRepo.upsertWatch(watch.copy(
-                    currentEpisode = newEpisode,
-                    changeTime = System.currentTimeMillis(),
-                    watchState = if (newEpisode <= 0) 1 else 0
-                ))
+                if (newEpisode != watch.currentEpisode) {
+                    val updatedWatch = watch.copy(
+                        currentEpisode = newEpisode,
+                        watchState = when {
+                            newEpisode <= 0 -> 1          // 未开始
+                            newEpisode >= watch.totalEpisode -> 2  // 已完成
+                            else -> 0                     // 观看中
+                        }
+                    )
+                    daoRepo.upsertWatch(updatedWatch)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "modifyEpisode: ${e.printStackTrace()}")
             }
         }
     }
@@ -122,10 +114,15 @@ class HomeViewModel @Inject constructor(
     private fun showDialog(id: Long) {
         viewModelScope.launch {
             val watch = daoRepo.findWatch(id)
-            _viewState.emit(homeState.value.copy(id = watch.id))
-            _viewState.emit(homeState.value.copy(title = watch.title))
-            _viewState.emit(homeState.value.copy(currentEpi = TextFieldValue(text = watch.currentEpisode.toString())))
-            _viewState.emit(homeState.value.copy(totalEpi = TextFieldValue(text = watch.totalEpisode.toString())))
+
+            _viewState.update {
+                it.copy(
+                    id = watch.id,
+                    title = watch.title,
+                    currentEpi = TextFieldValue(text = watch.currentEpisode.toString()),
+                    totalEpi = TextFieldValue(text = watch.totalEpisode.toString())
+                )
+            }
             _viewEvent.emit(HomeEvent.ShowDialog)
         }
     }
@@ -133,58 +130,70 @@ class HomeViewModel @Inject constructor(
     private fun dismissDialog() {
         viewModelScope.launch {
             _viewEvent.emit(HomeEvent.CloseDialog)
-            _viewState.emit(homeState.value.copy(id = -1))
-            _viewState.emit(homeState.value.copy(title = ""))
-            _viewState.emit(homeState.value.copy(currentEpi = TextFieldValue()))
-            _viewState.emit(homeState.value.copy(totalEpi = TextFieldValue()))
+
+            _viewState.update {
+                it.copy(
+                    id = -1,
+                    title = "",
+                    currentEpi = TextFieldValue(),
+                    totalEpi = TextFieldValue()
+                )
+            }
         }
     }
 
     private fun changeCurrentEpi(cEpi: TextFieldValue) {
-        viewModelScope.launch {
-            if (cEpi.text.isNotEmpty() && cEpi.text.toInt() > homeState.value.totalEpi.text.toInt()) {
-                _viewState.emit(_viewState.value.copy(currentEpi = homeState.value.totalEpi))
-            } else {
-                _viewState.emit(_viewState.value.copy(currentEpi = cEpi))
-            }
-        }
+//
+//        if (validatedEpi.text.isNotEmpty() && validatedEpi.text.toInt() > homeState.value.totalEpi.text.toInt()) {
+//            _viewState.update { it.copy(currentEpi = homeState.value.totalEpi) }
+//        } else {
+//            _viewState.update { it.copy(currentEpi = cEpi) }
+//        }
+        _viewState.update { it.copy(currentEpi = cEpi) }
     }
 
     private fun changeTotalEpi(tEpi: TextFieldValue) {
-        viewModelScope.launch {
-            if (tEpi.text.isNotEmpty()) {
-                if (tEpi.text.toInt() < homeState.value.currentEpi.text.toInt()) {
-                    _viewState.emit(_viewState.value.copy(currentEpi = tEpi))
-                }
-            }
-            _viewState.emit(_viewState.value.copy(totalEpi = tEpi))
-        }
+//        if (tEpi.text.isNotEmpty()) {
+//            if (tEpi.text.toInt() < homeState.value.currentEpi.text.toInt()) {
+//                _viewState.update { it.copy(currentEpi = tEpi) }
+//            }
+//        }
+//        _viewState.update { it.copy(totalEpi = tEpi) }
+
+        _viewState.update { it.copy(currentEpi = tEpi) }
     }
 
     private fun updateData(id: Long) {
-        viewModelScope.launch {
-            val watch = daoRepo.findWatch(id)
+        val waitWatch = viewModelScope.async {
+            daoRepo.findWatch(id)
+        }
+
+        try {
             if (homeState.value.currentEpi.text.isEmpty() || homeState.value.totalEpi.text.isEmpty()) {
-                _viewState.emit(homeState.value.copy(errorMessage = "Input cannot be empty"))
-                return@launch
+                _viewState.update { it.copy(errorMessage = "Input cannot be empty") }
+                return
             }
             val nCEpi = homeState.value.currentEpi.text.toInt()
             val nTEpi = homeState.value.totalEpi.text.toInt()
 
-            daoRepo.upsertWatch(watch.copy(
-                currentEpisode = nCEpi,
-                totalEpisode = nTEpi,
-                changeTime = System.currentTimeMillis(),
-                watchState = getWatchState(nCEpi, nTEpi)
-            ))
-            dismissDialog()
+            viewModelScope.launch {
+                daoRepo.upsertWatch(
+                    waitWatch.await().copy(
+                        currentEpisode = nCEpi,
+                        totalEpisode = nTEpi,
+                        watchState = getWatchState(nCEpi, nTEpi)
+                    )
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "updateData: ${e.printStackTrace()}")
         }
+        dismissDialog()
     }
 
     private fun deleteData(id: Long) {
         viewModelScope.launch {
-            val entity = daoRepo.findWatch(id).copy(isDelete = true, changeTime = System.currentTimeMillis())
-            daoRepo.upsertWatch(entity)
+            daoRepo.deleteWatch(id)
             dismissDialog()
         }
     }
@@ -239,5 +248,9 @@ class HomeViewModel @Inject constructor(
 
     suspend fun dispatch(action: HomeAction) {
         _viewAction.send(action)
+    }
+
+    fun vibrate(duration: Long) {
+        vibrator.vibrate(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 }

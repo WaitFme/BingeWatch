@@ -1,8 +1,8 @@
-package com.anpe.bingewatch.ui.widget
+package com.anpe.bingewatch.ui.component
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,22 +11,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
 @Composable
-fun SettingItemMenu(
+fun SettingItemSwitch(
     modifier: Modifier = Modifier,
     title: String,
-    menuContent: @Composable () -> Unit,
-    summary: String? = null
+    summary: String? = null,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
 ) {
-    var menuState by remember {
-        mutableStateOf(false)
+    var switchChecked by remember {
+        mutableStateOf(checked)
     }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .clickable {
-                menuState = !menuState
+                switchChecked = !switchChecked
+                onCheckedChange(switchChecked)
             }
             .height(80.dp)
     ) {
@@ -50,15 +53,15 @@ fun SettingItemMenu(
             }
         }
 
-        Column(modifier = Modifier.align(Alignment.CenterEnd).padding(end = 15.dp)) {
-            DropdownMenu(
-                expanded = menuState,
-                onDismissRequest = {
-                    menuState = false
-                }
-            ) {
-                menuContent()
+        Switch(
+            modifier = Modifier
+                .padding(start = 15.dp, end = 15.dp)
+                .align(Alignment.CenterEnd),
+            checked = checked,
+            onCheckedChange = {
+                switchChecked = it
+                onCheckedChange(it)
             }
-        }
+        )
     }
 }

@@ -4,16 +4,17 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.serialization)
 }
 
 android {
     namespace = "com.anpe.bingewatch"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.anpe.bingewatch"
         minSdk = 29
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 25062018
         versionName = "0.114.514"
 
@@ -27,8 +28,7 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
@@ -96,18 +96,14 @@ dependencies {
     // Windows size class
     implementation(libs.windowssizeclass)
 
-    // Moshi
-    implementation(libs.moshi.kotlin)
-    ksp(libs.moshi.kotlin.codegen)
-
     // Retrofit2
     implementation(libs.retrofit2)
-    implementation(libs.retrofit2.converter.moshi)
-//    implementation(libs.retrofit2.converter)
+    implementation(libs.retrofit2.converter.serialization)
 
     // DataStore
     implementation(libs.datastore.preferences)
     implementation(libs.datastore)
 
-    implementation(libs.splashscreen)
+    // Serialization
+    implementation(libs.serialization)
 }

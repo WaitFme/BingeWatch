@@ -25,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,13 +36,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.anpe.bingewatch.data.entity.WatchEntity
-import com.anpe.bingewatch.ui.widget.SettingItem
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.anpe.bingewatch.ui.component.SettingItem
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -99,7 +97,7 @@ fun SettingContent(modifier: Modifier, viewModel: SettingsViewModel) {
     Column(
         modifier = modifier
     ) {
-        val settingsState by viewModel.viewState.collectAsState()
+        val settingsState by viewModel.viewState.collectAsStateWithLifecycle()
         val scope = rememberCoroutineScope()
         val context = LocalContext.current
 
@@ -116,34 +114,19 @@ fun SettingContent(modifier: Modifier, viewModel: SettingsViewModel) {
                 uri?.let {
                     // 使用 ContentResolver 打开输入流
                     contentResolver.openInputStream(uri)?.use { inputStream ->
-                        // 使用 Moshi 解析 JSON 数据
-                        val moshi =
-                            Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                        val jsonAdapter = moshi.adapter<List<WatchEntity>>(
-                            Types.newParameterizedType(
-                                List::class.java,
-                                WatchEntity::class.java
-                            )
-                        )
+                        try {
+                            // 从输入流读取 JSON 内容
+                            val jsonString = inputStream.bufferedReader().use { it.readText() }
 
-                        // 从输入流读取 JSON 内容
-                        val jsonString = inputStream.bufferedReader().use { it.readText() }
+                            // 使用 kotlinx-serialization 解析 JSON 数据
+                            val watchEntities = Json.decodeFromString<List<WatchEntity>>(jsonString)
 
-                        // 解析 JSON 为 WatchEntity 对象列表
-                        val watchEntities = jsonAdapter.fromJson(jsonString)
+                            // 将数据插入到数据库
+                            viewModel.uos(*watchEntities.toTypedArray())
 
-                        // 检查解析是否成功并将数据插入到数据库
-                        if (watchEntities != null) {
-                            viewModel.uos(*watchEntities.map { it }.toTypedArray())
-
-                            Toast.makeText(
-                                context,
-                                "导入成功!${watchEntities[0].title}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            Toast.makeText(context, "解析 JSON 失败!", Toast.LENGTH_SHORT)
-                                .show()
+                            Toast.makeText(context, "导入成功！", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "解析 JSON 失败: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -153,19 +136,25 @@ fun SettingContent(modifier: Modifier, viewModel: SettingsViewModel) {
         // 将数据库数据转成json文件保存到手机
         val openSelectPhotoLauncherSave = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.CreateDocument("application/json"),
-            onResult = {
-                val contentResolver = context.contentResolver
-                val outputStream = contentResolver.openOutputStream(it!!)
+            onResult = { uri ->
+                uri?.let {
+                    val contentResolver = context.contentResolver
 
-                val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                val pt =
-                    Types.newParameterizedType(List::class.java, WatchEntity::class.java)
+                    try {
+                        contentResolver.openOutputStream(it)?.use { outputStream ->
+                            // 使用 kotlinx-serialization 将数据序列化为 JSON 字符串
+                            val jsonString = Json.encodeToString(settingsState.data)
 
-                val jsonAdapter = moshi.adapter<List<WatchEntity>>(pt)
-                val toJson = jsonAdapter.toJson(settingsState.data)
-                outputStream?.use { stream ->
-                    stream.write(toJson.toString().toByteArray())
-                    stream.flush()
+                            // 写入文件
+                            outputStream.write(jsonString.toByteArray())
+                            outputStream.flush()
+
+                            Toast.makeText(context, "导出成功！", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Error", "SettingContent: ${e.printStackTrace()}", )
+                        Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
         )

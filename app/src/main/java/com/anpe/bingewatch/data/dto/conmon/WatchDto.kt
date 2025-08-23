@@ -1,24 +1,24 @@
 package com.anpe.bingewatch.data.dto.conmon
 
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class WatchDto(
-    @Json(name = "title")
+    @SerialName("title")
     val title: String,
-    @Json(name = "remarks")
+    @SerialName("remarks")
     val remarks: String,
-    @Json(name = "currentEpisode")
+    @SerialName("currentEpisode")
     val currentEpisode: Int,
-    @Json(name = "totalEpisode")
+    @SerialName("totalEpisode")
     val totalEpisode: Int,
-    @Json(name = "state")
+    @SerialName("state")
     val state: Int,
-    @Json(name = "createTime")
+    @SerialName("createTime")
     val createTime: Long,
-    @Json(name = "changeTime")
+    @SerialName("changeTime")
     val changeTime: Long,
-    @Json(name = "isDelete")
+    @SerialName("isDelete")
     val isDelete: Boolean,
 )

@@ -3,7 +3,9 @@ package com.anpe.bingewatch.data.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "watch_table")
 data class WatchEntity(
     @PrimaryKey(autoGenerate = true)

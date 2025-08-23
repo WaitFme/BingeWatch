@@ -1,4 +1,4 @@
-package com.anpe.bingewatch.ui.widget
+package com.anpe.bingewatch.ui.component
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*

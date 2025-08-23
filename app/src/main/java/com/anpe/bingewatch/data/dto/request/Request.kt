@@ -1,11 +1,11 @@
 package com.anpe.bingewatch.data.dto.request
 
 import com.anpe.bingewatch.data.dto.conmon.WatchDto
-import com.squareup.moshi.Json
-import com.squareup.moshi.JsonClass
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerialName
 
-@JsonClass(generateAdapter = true)
+@Serializable
 data class Request(
-    @Json(name = "data")
+    @SerialName("data")
     val data: List<WatchDto> = listOf()
 )

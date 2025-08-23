@@ -9,7 +9,7 @@ import retrofit2.http.Url
 
 interface NetApi {
     @POST
-    suspend fun upload(@Url url: String, @Body request: Request): Request
+    suspend fun upload(@Url url: String, @Body request: Request)
 
     @GET
     suspend fun sync(@Url url: String): Response

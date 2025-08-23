@@ -10,14 +10,27 @@ import javax.inject.Inject
 
 class DaoRepositoryImpl @Inject constructor(private val dao: WatchDao): DaoRepository {
     override fun upsertWatch(vararg entity: WatchEntity) {
+        val entities = entity.map {
+            it.copy(changeTime = System.currentTimeMillis())
+        }
         CoroutineScope(Dispatchers.IO).launch {
-            dao.upsertWatch(*entity)
+            dao.upsertWatch(*entities.toTypedArray())
         }
     }
 
     override fun deleteAllWatch() {
         CoroutineScope(Dispatchers.IO).launch {
             dao.deleteAllWatch()
+        }
+    }
+
+    override fun deleteWatch(id: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val entity = dao.findWatch(id).copy(
+                isDelete = true,
+                changeTime = System.currentTimeMillis()
+            )
+            dao.upsertWatch(entity)
         }
     }
 

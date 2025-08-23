@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-06-20T12:08:36.216646Z">
+        <DropdownSelection timestamp="2025-06-22T17:43:09.606064Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/POKO/.android/avd/Medium_Phone_API_34.avd" />
+              <DeviceId pluginId="Default" identifier="serial=adb-181QGEY62224C-IKcw4T._adb-tls-connect._tcp:5555;connection=3ae3606e" />
             </handle>
           </Target>
         </DropdownSelection>

@@ -8,6 +8,8 @@ interface DaoRepository {
 
     fun deleteAllWatch()
 
+    fun deleteWatch(id: Long)
+
     fun getAllWatchFlow(): Flow<List<WatchEntity>>
 
     fun findAllWatchByTitleFlow(): Flow<List<WatchEntity>>
