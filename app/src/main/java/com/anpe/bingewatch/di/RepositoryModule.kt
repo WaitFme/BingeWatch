@@ -1,9 +1,9 @@
 package com.anpe.bingewatch.di
 
-import com.anpe.bingewatch.data.repository.DaoRepository
-import com.anpe.bingewatch.data.repository.DaoRepositoryImpl
-import com.anpe.bingewatch.data.repository.NetRepository
-import com.anpe.bingewatch.data.repository.NetRepositoryImpl
+import com.anpe.bingewatch.core.repository.DaoRepository
+import com.anpe.bingewatch.core.repository.DaoRepositoryImpl
+import com.anpe.bingewatch.core.repository.NetRepository
+import com.anpe.bingewatch.core.repository.NetRepositoryImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

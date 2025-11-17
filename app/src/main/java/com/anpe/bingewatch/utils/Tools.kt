@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.anpe.bingewatch.data.entity.WatchEntity
+import com.anpe.bingewatch.core.data.entity.WatchEntity
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date

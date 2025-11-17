@@ -106,4 +106,7 @@ dependencies {
 
     // Serialization
     implementation(libs.serialization)
+
+    // Material Icons
+    implementation(libs.material.icons)
 }

@@ -9,8 +9,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.anpe.bingewatch.constant.Constants
-import com.anpe.bingewatch.data.database.WatchDatabase
-import com.anpe.bingewatch.data.network.NetApi
+import com.anpe.bingewatch.core.data.database.WatchDatabase
+import com.anpe.bingewatch.core.network.NetApi
 import com.anpe.bingewatch.utils.DataStoreManager
 import dagger.Module
 import dagger.Provides
